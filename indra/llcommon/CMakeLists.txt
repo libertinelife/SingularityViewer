@@ -56,7 +56,6 @@ set(llcommon_SOURCE_FILES
     llfile.cpp
     llfindlocale.cpp
     llfixedbuffer.cpp
-    llfoldertype.cpp
     llformat.cpp
     llframetimer.cpp
     llheartbeat.cpp
@@ -177,7 +176,6 @@ set(llcommon_HEADER_FILES
     llfile.h
     llfindlocale.h
     llfixedbuffer.h
-    llfoldertype.h
     llformat.h
     llframetimer.h
     llhandle.h
@@ -254,7 +252,6 @@ set(llcommon_HEADER_FILES
     metapropertyt.h
     reflective.h
     reflectivet.h
-    roles_constants.h
     stdenums.h
     stdtypes.h
     string_table.h
@@ -271,6 +268,9 @@ list(APPEND llcommon_SOURCE_FILES ${cwdebug_SOURCE_FILES})
 list(APPEND llcommon_SOURCE_FILES ${llcommon_HEADER_FILES})
 
 add_library (llcommon SHARED ${llcommon_SOURCE_FILES})
+if(WINDOWS)
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /GL")
+endif(WINDOWS)
 add_dependencies(llcommon prepare)
 target_link_libraries(
     llcommon

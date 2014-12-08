@@ -89,9 +89,6 @@ LLPrefsAscentChat::LLPrefsAscentChat()
 
 	childSetEnabled("reset_antispam", started);
 	getChild<LLUICtrl>("reset_antispam")->setCommitCallback(boost::bind(NACLAntiSpamRegistry::purgeAllQueues));
-	getChild<LLUICtrl>("enable_as")->setCommitCallback(boost::bind(&LLPrefsAscentChat::onCommitEnableAS, this, _2));
-	getChild<LLUICtrl>("antispam_checkbox")->setCommitCallback(boost::bind(&LLPrefsAscentChat::onCommitDialogBlock, this, _1, _2));
-	getChild<LLUICtrl>("Group Invites")->setCommitCallback(boost::bind(&LLPrefsAscentChat::onCommitDialogBlock, this, _1, _2));
 
 	getChild<LLUICtrl>("autoreplace")->setCommitCallback(boost::bind(LLFloaterAutoReplaceSettings::showInstance, LLSD()));
 	getChild<LLUICtrl>("KeywordsOn")->setCommitCallback(boost::bind(&LLPrefsAscentChat::onCommitKeywords, this, _1));
@@ -186,39 +183,6 @@ void LLPrefsAscentChat::onCommitTimeDate(LLUICtrl* ctrl)
     gSavedSettings.setString("TimestampFormat", timestamp);
 }
 
-void LLPrefsAscentChat::onCommitEnableAS(const LLSD& value)
-{
-	bool enabled = value.asBoolean();
-	childSetEnabled("spammsg_checkbox",          enabled);
-	childSetEnabled("antispamtime",              enabled);
-	childSetEnabled("antispamamount",            enabled);
-	childSetEnabled("antispamsoundmulti",        enabled);
-	childSetEnabled("antispamsoundpreloadmulti", enabled);
-	childSetEnabled("antispamnewlines",          enabled);
-	childSetEnabled("Notify On Spam",            enabled);
-}
-
-void LLPrefsAscentChat::onCommitDialogBlock(LLUICtrl* ctrl, const LLSD& value)
-{
-	childSetEnabled("Group Fee Invites", !childGetValue("antispam_checkbox").asBoolean() && !childGetValue("Group Invites").asBoolean());
-	bool enabled = value.asBoolean();
-	if (ctrl->getName() == "antispam_checkbox")
-	{
-		childSetEnabled("Block All Dialogs From", !enabled);
-		childSetEnabled("Alerts",                 !enabled);
-		childSetEnabled("Friendship Offers",      !enabled);
-		childSetEnabled("Group Invites",          !enabled);
-		childSetEnabled("Group Notices",          !enabled);
-		childSetEnabled("Item Offers",            !enabled);
-		childSetEnabled("Scripts",                !enabled);
-		childSetEnabled("Teleport Offers",        !enabled);
-		childSetEnabled("Teleport Requests",      !enabled);
-		childSetEnabled("Except those from:",     !enabled);
-		childSetEnabled("My objects",             !enabled);
-		childSetEnabled("My friends",             !enabled);
-	}
-}
-
 void LLPrefsAscentChat::onCommitKeywords(LLUICtrl* ctrl)
 {
     if (ctrl->getName() == "KeywordsOn")
@@ -262,7 +226,7 @@ void LLPrefsAscentChat::refreshValues()
     mSecondsInLog                   = gSavedSettings.getBOOL("SecondsInLog");
 
     std::string format = gSavedSettings.getString("ShortTimeFormat");
-    if (format.find("%p") == -1)
+    if (format.find("%p") == std::string::npos)
     {
         mTimeFormat = 0;
     }
@@ -272,7 +236,7 @@ void LLPrefsAscentChat::refreshValues()
     }
 
     format = gSavedSettings.getString("ShortDateFormat");
-    if (format.find("%m/%d/%") != -1)
+    if (format.find("%m/%d/%") != std::string::npos)
     {
         mDateFormat = 2;
     }
@@ -298,8 +262,10 @@ void LLPrefsAscentChat::refreshValues()
 	mOneLineGroupButt               = gSavedSettings.getBOOL("UseConciseGroupChatButtons");
 	mOneLineConfButt                = gSavedSettings.getBOOL("UseConciseConferenceButtons");
 	mOnlyComm                       = gSavedSettings.getBOOL("CommunicateSpecificShortcut");
+	mLegacyEndScroll                = gSavedSettings.getBOOL("LiruLegacyScrollToEnd");
 	mItalicizeActions               = gSavedSettings.getBOOL("LiruItalicizeActions");
 	mLegacyLogLaunch                = gSavedSettings.getBOOL("LiruLegacyLogLaunch");
+	mChatTabNames                   = gSavedSettings.getS32("IMNameSystem");
 	mFriendNames                    = gSavedSettings.getS32("FriendNameSystem");
 	mGroupMembersNames              = gSavedSettings.getS32("GroupMembersNameSystem");
 	mLandManagementNames            = gSavedSettings.getS32("LandManagementNameSystem");
@@ -383,6 +349,8 @@ void LLPrefsAscentChat::refresh()
     }
 
 	//Chat UI -----------------------------------------------------------------------------
+	if (combo = getChild<LLComboBox>("chat_tabs_namesystem_combobox"))
+		combo->setCurrentByIndex(mChatTabNames);
 	if (combo = getChild<LLComboBox>("friends_namesystem_combobox"))
 		combo->setCurrentByIndex(mFriendNames);
 	if (combo = getChild<LLComboBox>("group_members_namesystem_combobox"))
@@ -393,26 +361,6 @@ void LLPrefsAscentChat::refresh()
 		combo->setCurrentByIndex(mRadarNames);
 	if (combo = getChild<LLComboBox>("speaker_namesystem_combobox"))
 		combo->setCurrentByIndex(mSpeakerNames);
-
-    //Antispam ------------------------------------------------------------------------
-	// sensitivity tuners
-	childSetEnabled("spammsg_checkbox",          mEnableAS);
-	childSetEnabled("antispamtime",              mEnableAS);
-	childSetEnabled("antispamamount",            mEnableAS);
-	childSetEnabled("antispamsoundmulti",        mEnableAS);
-	childSetEnabled("antispamsoundpreloadmulti", mEnableAS);
-	childSetEnabled("antispamnewlines",          mEnableAS);
-	childSetEnabled("Notify On Spam",            mEnableAS);
-	// dialog blocking tuners
-	childSetEnabled("Block All Dialogs From", !mBlockDialogSpam);
-	childSetEnabled("Alerts",                 !mBlockDialogSpam);
-	childSetEnabled("Friendship Offers",      !mBlockDialogSpam);
-	childSetEnabled("Group Invites",          !mBlockDialogSpam);
-	childSetEnabled("Group Fee Invites",      !mBlockDialogSpam && !mBlockGroupInviteSpam);
-	childSetEnabled("Group Notices",          !mBlockDialogSpam);
-	childSetEnabled("Item Offers",            !mBlockDialogSpam);
-	childSetEnabled("Scripts",                !mBlockDialogSpam);
-	childSetEnabled("Teleport Offers",        !mBlockDialogSpam);
 
     //Text Options ------------------------------------------------------------------------
     combo = getChild<LLComboBox>("SpellBase");
@@ -553,8 +501,10 @@ void LLPrefsAscentChat::cancel()
 	gSavedSettings.setBOOL("UseConciseGroupChatButtons",           mOneLineGroupButt);
 	gSavedSettings.setBOOL("UseConciseConferenceButtons",          mOneLineConfButt);
 	gSavedSettings.setBOOL("CommunicateSpecificShortcut",          mOnlyComm);
+	gSavedSettings.setBOOL("LiruLegacyScrollToEnd",                mLegacyEndScroll);
 	gSavedSettings.setBOOL("LiruItalicizeActions",                 mItalicizeActions);
 	gSavedSettings.setBOOL("LiruLegacyLogLaunch",                  mLegacyLogLaunch);
+	gSavedSettings.setS32("IMNameSystem",                          mChatTabNames);
 	gSavedSettings.setS32("FriendNameSystem",                      mFriendNames);
 	gSavedSettings.setS32("GroupMembersNameSystem",                mGroupMembersNames);
 	gSavedSettings.setS32("LandManagementNameSystem",              mLandManagementNames);

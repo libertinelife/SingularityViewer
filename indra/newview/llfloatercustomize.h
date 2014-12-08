@@ -69,10 +69,6 @@ public:
 
 
 private:
-	// Initialization
-	void			initWearablePanels();
-	void			initScrollingPanelList();
-
 	// Destruction
 	void			delayedClose(bool proceed, bool app_quitting);
 
@@ -103,7 +99,7 @@ public:
 private:
 	// Callbacks
 	void			onBtnOk();
-	void			onBtnMakeOutfit();
+	void			onBtnMakeOutfit(const LLSD& val);
 	void			onBtnImport();
 	void			onBtnImport_continued(AIFilePicker* filepicker);
 	void			onBtnExport();
@@ -123,6 +119,9 @@ private:
 
 	LLScrollingPanelList*			mScrollingPanelList;
 	LLScrollContainer*		mScrollContainer;
+	LLView *mMetricHeight, *mImperialHeight;
+	class LLFlyoutButton* mMakeOutfitBtn;
+	LLTabContainer* mTabContainer;
 	LLPointer<LLVisualParamReset>	mResetParams;
 
 	LLInventoryObserver*			mInventoryObserver;

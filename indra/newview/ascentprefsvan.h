@@ -48,8 +48,6 @@ public:
 
 protected:
 	void onCommitClientTag(LLUICtrl* ctrl);
-	void onCommitCheckBox(LLUICtrl* ctrl, const LLSD& value);
-	void onCommitTextModified(LLUICtrl* ctrl, const LLSD& value);
 	static void onManualClientUpdate();
 
 private:
@@ -61,11 +59,13 @@ private:
 	bool mDisableChatAnimation;
 	bool mAddNotReplace;
 	bool mTurnAround;
+	bool mCustomizeAnim;
 	bool mAnnounceSnapshots;
 	bool mAnnounceStreamMetadata;
 	bool mUnfocusedFloatersOpaque;
 	bool mCompleteNameProfiles;
 	bool mScriptErrorsStealFocus;
+	bool mConnectToNeighbors;
 	//Tags\Colors
 	bool mAscentBroadcastTag;
 	std::string mReportClientUUID;

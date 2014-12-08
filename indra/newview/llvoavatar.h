@@ -79,6 +79,7 @@ class LLHUDEffectSpiral;
 class LLTexGlobalColor;
 class LLViewerJoint;
 struct LLAppearanceMessageContents;
+class LLMeshSkinInfo;
 
 class SHClientTagMgr : public LLSingleton<SHClientTagMgr>, public boost::signals2::trackable
 {
@@ -181,6 +182,7 @@ public:
 	/*virtual*/ BOOL   	 	 	updateLOD();
 	BOOL  	 	 	 	 	updateJointLODs();
 	void						updateLODRiggedAttachments( void );
+	void						updateSoftwareSkinnedVertices(const LLMeshSkinInfo* skin, const LLVector4a* weight, const LLVolumeFace& vol_face, LLVertexBuffer *buffer);
 	/*virtual*/ BOOL   	 	 	isActive() const; // Whether this object needs to do an idleUpdate.
 	S32 						totalTextureMemForUUIDS(std::set<LLUUID>& ids);
 	bool 						allTexturesCompletelyDownloaded(std::set<LLUUID>& ids) const;
@@ -248,7 +250,6 @@ public:
 	virtual LLJoint*		getJoint(const std::string &name);
 	
 	void					resetJointPositionsToDefault( void );
-	void					resetSpecificJointPosition( const std::string& name );
 	
 	/*virtual*/ const LLUUID&	getID() const;
 	/*virtual*/ void			addDebugText(const std::string& text);
@@ -914,11 +915,11 @@ private:
  **/
 
 public:
-	/*virtual*/ std::string		getFullname() const; // Returns "FirstName LastName"
+	std::string		getFullname() const; // Returns "FirstName LastName"
 	std::string		avString() const; // Frequently used string in log messages "Avatar '<full name'"
 protected:
-	static void		getAnimLabels(LLDynamicArray<std::string>* labels);
-	static void		getAnimNames(LLDynamicArray<std::string>* names);	
+	static void		getAnimLabels(std::vector<std::string>* labels);
+	static void		getAnimNames(std::vector<std::string>* names);
 private:
 	std::string		mNameString;		// UTF-8 title + name + status
 	std::string  	mTitle;
@@ -1072,8 +1073,10 @@ private:
 
 // </edit>
 }; // LLVOAvatar
-
 extern const F32 SELF_ADDITIONAL_PRI;
-extern const S32 MAX_TEXTURE_VIRTURE_SIZE_RESET_INTERVAL;
+extern const S32 MAX_TEXTURE_VIRTUAL_SIZE_RESET_INTERVAL;
+
+void dump_sequential_xml(const std::string outprefix, const LLSD& content);
 
 #endif // LL_VOAVATAR_H
+

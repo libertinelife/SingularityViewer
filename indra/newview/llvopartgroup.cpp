@@ -339,7 +339,6 @@ BOOL LLVOPartGroup::updateGeometry(LLDrawable *drawable)
 			group->setState(LLSpatialGroup::GEOM_DIRTY);
 		}
 		drawable->setNumFaces(0, NULL, getTEImage(0));
-		LLPipeline::sCompiles++;
 		return TRUE;
 	}
 
@@ -482,7 +481,6 @@ BOOL LLVOPartGroup::updateGeometry(LLDrawable *drawable)
 	mScale.set(max_scale, max_scale, max_scale);
 
 	mDrawable->movePartition();
-	LLPipeline::sCompiles++;
 	return TRUE;
 }
 
@@ -987,6 +985,11 @@ void LLParticlePartition::getGeometry(LLSpatialGroup* group)
 			draw_vec.push_back(info);
 			//for alpha sorting
 			facep->setDrawInfo(info);
+		}
+
+		if(facep->getGeomCount() > 0)
+		{
+			buffer->validateRange(facep->getGeomIndex(),  facep->getGeomIndex() + facep->getGeomCount() - 1, facep->getIndicesCount(), facep->getIndicesStart());
 		}
 	}
 

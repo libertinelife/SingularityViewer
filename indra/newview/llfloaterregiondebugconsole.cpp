@@ -37,10 +37,6 @@
 #include "llviewerregion.h"
 #include "lluictrlfactory.h"
 
-class AIHTTPTimeoutPolicy;
-extern AIHTTPTimeoutPolicy asyncConsoleResponder_timeout;
-extern AIHTTPTimeoutPolicy consoleResponder_timeout;
-
 // Two versions of the sim console API are supported.
 //
 // SimConsole capability (deprecated):
@@ -73,15 +69,14 @@ namespace
 	const std::string CONSOLE_NOT_SUPPORTED(
 		"This region does not support the simulator console.");
 
-	// This responder handles the initial response. Unless error() is called
+	// This responder handles the initial response. Unless httpFailure() is called
 	// we assume that the simulator has received our request. Error will be
 	// called if this request times out.
 	//
 	class AsyncConsoleResponder : public LLHTTPClient::ResponderIgnoreBody
 	{
 	public:
-		/*virtual*/ void error(U32 status, const std::string& reason) { sConsoleReplySignal(UNABLE_TO_SEND_COMMAND); }
-		/*virtual*/ AIHTTPTimeoutPolicy const& getHTTPTimeoutPolicy(void) const { return asyncConsoleResponder_timeout; }
+		/*virtual*/ void httpFailure(void) { sConsoleReplySignal(UNABLE_TO_SEND_COMMAND); }
 		/*virtual*/ char const* getName(void) const { return "AsyncConsoleResponder"; }
 	};
 
@@ -92,7 +87,7 @@ namespace
 		{
 		}
 
-		/*virtual*/ void error(U32 status, const std::string& reason)
+		/*virtual*/ void httpFailure(void)
 		{
 			if (mOutput)
 			{
@@ -102,16 +97,15 @@ namespace
 			}
 		}
 
-		/*virtual*/ void result(const LLSD& content)
+		/*virtual*/ void httpSuccess(void)
 		{
 			if (mOutput)
 			{
 				mOutput->appendText(
-					content.asString() + PROMPT, false, false);
+					mContent.asString() + PROMPT, false, false);
 			}
 		}
 
-		/*virtual*/ AIHTTPTimeoutPolicy const& getHTTPTimeoutPolicy(void) const { return consoleResponder_timeout; }
 		/*virtual*/ char const* getName(void) const { return "ConsoleResponder"; }
 
 		LLTextEditor * mOutput;

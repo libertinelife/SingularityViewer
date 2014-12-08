@@ -36,9 +36,11 @@
 
 #define LLCONVEXDECOMPINTER_STATIC 1
 
-#include "LLConvexDecomposition.h"
+#include "llconvexdecomposition.h"
 #include "lluploadfloaterobservers.h"
 #include "aistatemachinethread.h"
+
+#include <boost/function.hpp>
 
 class LLVOVolume;
 class LLMeshResponder;
@@ -283,6 +285,16 @@ public:
 
 	};
 
+	struct MeshHeaderInfo
+	{
+		MeshHeaderInfo()
+			: mHeaderSize(0), mVersion(0), mOffset(-1), mSize(0) {}
+		U32 mHeaderSize;
+		U32 mVersion;
+		S32 mOffset;
+		S32 mSize;
+	};
+
 	//set of requested skin info
 	std::set<LLUUID> mSkinRequests;
 	
@@ -324,13 +336,16 @@ public:
 	void lockAndLoadMeshLOD(const LLVolumeParams& mesh_params, S32 lod);
 	void loadMeshLOD(const LLVolumeParams& mesh_params, S32 lod);
 	bool fetchMeshHeader(const LLVolumeParams& mesh_params, U32& count);
-	void fetchMeshLOD(const LLVolumeParams& mesh_params, S32 lod, U32& count);
+	bool fetchMeshLOD(const LLVolumeParams& mesh_params, S32 lod, U32& count);
 	bool headerReceived(const LLVolumeParams& mesh_params, U8* data, S32 data_size);
 	bool lodReceived(const LLVolumeParams& mesh_params, S32 lod, U8* data, S32 data_size);
 	bool skinInfoReceived(const LLUUID& mesh_id, U8* data, S32 data_size);
 	bool decompositionReceived(const LLUUID& mesh_id, U8* data, S32 data_size);
 	bool physicsShapeReceived(const LLUUID& mesh_id, U8* data, S32 data_size);
 	LLSD& getMeshHeader(const LLUUID& mesh_id);
+
+	bool getMeshHeaderInfo(const LLUUID& mesh_id, const char* block_name, MeshHeaderInfo& info);
+	bool loadInfoFromVFS(const LLUUID& mesh_id, MeshHeaderInfo& info, boost::function<bool(const LLUUID&, U8*, S32)> fn);
 
 	void notifyLoadedMeshes();
 	S32 getActualMeshLOD(const LLVolumeParams& mesh_params, S32 lod);
@@ -405,10 +420,11 @@ public:
 #endif
 	void init(instance_list& data, LLVector3& scale, bool upload_textures, bool upload_skin, bool upload_joints, bool do_upload,
 		LLHandle<LLWholeModelFeeObserver> const& fee_observer, LLHandle<LLWholeModelUploadObserver> const& upload_observer);
+	~LLMeshUploadThread();
 
 	void postRequest(std::string& url, AIMeshUpload* state_machine);
 
-	/*virtual*/ bool run();
+	virtual bool run();
 	void preStart();
 
 	void generateHulls();
@@ -448,6 +464,8 @@ public:
 		LLHandle<LLWholeModelFeeObserver> const& fee_observer, LLHandle<LLWholeModelUploadObserver> const& upload_observer);
 
 	void setWholeModelUploadURL(std::string const& whole_model_upload_url) { mWholeModelUploadURL = whole_model_upload_url; }
+
+	/*virtual*/ const char* getName() const { return "AIMeshUpload"; }
 
 protected:
 	// Implement AIStateMachine.
@@ -504,8 +522,7 @@ public:
 
 	void uploadModel(std::vector<LLModelInstance>& data, LLVector3& scale, bool upload_textures,
 					 bool upload_skin, bool upload_joints, std::string upload_url, bool do_upload = true,
-					 LLHandle<LLWholeModelFeeObserver> fee_observer= (LLHandle<LLWholeModelFeeObserver>()),
-					 LLHandle<LLWholeModelUploadObserver> upload_observer = (LLHandle<LLWholeModelUploadObserver>()));
+					 LLHandle<LLWholeModelFeeObserver> fee_observer= (LLHandle<LLWholeModelFeeObserver>()), LLHandle<LLWholeModelUploadObserver> upload_observer = (LLHandle<LLWholeModelUploadObserver>()));
 
 	S32 getMeshSize(const LLUUID& mesh_id, S32 lod);
 

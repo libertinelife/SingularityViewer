@@ -42,6 +42,7 @@ class LLMeshSkinInfo;
 class LLVolume;
 class LLVolumeFace;
 
+const U32 JOINT_COUNT = 52;
 
 class LLDrawPoolAvatar : public LLFacePool
 {
@@ -67,7 +68,7 @@ public:
 
 	LLDrawPoolAvatar();
 
-	static LLMatrix4& getModelView();
+	static const LLMatrix4a& getModelView();
 
 	/*virtual*/ LLDrawPool *instancePool();
 

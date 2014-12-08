@@ -77,7 +77,7 @@ class AITimer : public AIStateMachine {
 
   public:
 	AITimer(CWD_ONLY(bool debug = false)) :
-#if defined(CWDEBUG) || defined(DEBUG_CURLIO)
+#ifdef CWDEBUG
 		AIStateMachine(debug),
 #endif
 		mInterval(0) { DoutEntering(dc::statemachine(mSMDebug), "AITimer(void) [" << (void*)this << "]"); }
@@ -97,6 +97,8 @@ class AITimer : public AIStateMachine {
 	 * @returns expiration interval in seconds.
 	 */
 	F64 getInterval(void) const { return mInterval; }
+
+	/*virtual*/ const char* getName() const { return "AITimer"; }
 
   protected:
 	// Call finish() (or abort()), not delete.

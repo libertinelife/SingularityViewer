@@ -1594,9 +1594,11 @@ bool LLModelLoader::doLoadModel()
 						mesh_scale *= normalized_transformation;
 						normalized_transformation = mesh_scale;
 
-						glh::matrix4f inv_mat((F32*) normalized_transformation.mMatrix);
-						inv_mat = inv_mat.inverse();
-						LLMatrix4 inverse_normalized_transformation(inv_mat.m);
+						LLMatrix4a inv_mat;
+						inv_mat.loadu(normalized_transformation);
+						inv_mat.invert();
+
+						LLMatrix4 inverse_normalized_transformation(inv_mat.getF32ptr());
 
 						domSkin::domBind_shape_matrix* bind_mat = skin->getBind_shape_matrix();
 
@@ -4737,7 +4739,7 @@ void LLModelPreview::genBuffers(S32 lod, bool include_skin_weights)
 			LLStrider<LLVector3> normal_strider;
 			LLStrider<LLVector2> tc_strider;
 			LLStrider<U16> index_strider;
-			LLStrider<LLVector4> weights_strider;
+			LLStrider<LLVector4a> weights_strider;
 
 			vb->getVertexStrider(vertex_strider);
 			vb->getIndexStrider(index_strider);
@@ -4780,7 +4782,7 @@ void LLModelPreview::genBuffers(S32 lod, bool include_skin_weights)
 						w.mV[i] = joint + wght;
 					}
 
-					*(weights_strider++) = w;
+					(*(weights_strider++)).loadua(w.mV);
 				}
 			}
 
@@ -5135,9 +5137,10 @@ BOOL LLModelPreview::render()
 				}
 
 				gGL.pushMatrix();
-				LLMatrix4 mat = instance.mTransform;
+				LLMatrix4a mat;
+				mat.loadu((F32*)instance.mTransform.mMatrix);
 
-				gGL.multMatrix((GLfloat*) mat.mMatrix);
+				gGL.multMatrix(mat);
 
 				for (U32 i = 0; i < mVertexBuffer[mPreviewLOD][model].size(); ++i)
 				{
@@ -5218,9 +5221,10 @@ BOOL LLModelPreview::render()
 						}
 
 						gGL.pushMatrix();
-						LLMatrix4 mat = instance.mTransform;
+						LLMatrix4a mat;
+						mat.loadu((F32*)instance.mTransform.mMatrix);
 
-						gGL.multMatrix((GLfloat*) mat.mMatrix);
+						gGL.multMatrix(mat);
 
 
 						bool render_mesh = true;
@@ -5325,9 +5329,10 @@ BOOL LLModelPreview::render()
 						}
 
 						gGL.pushMatrix();
-						LLMatrix4 mat = instance.mTransform;
+						LLMatrix4a mat;
+						mat.loadu((F32*)instance.mTransform.mMatrix);
 
-						gGL.multMatrix((GLfloat*) mat.mMatrix);
+						gGL.multMatrix(mat);
 
 
 						LLPhysicsDecomp* decomp = gMeshRepo.mDecompThread;
@@ -5417,71 +5422,11 @@ BOOL LLModelPreview::render()
 						for (U32 i = 0; i < mVertexBuffer[mPreviewLOD][model].size(); ++i)
 						{
 							LLVertexBuffer* buffer = mVertexBuffer[mPreviewLOD][model][i];
-
 							const LLVolumeFace& face = model->getVolumeFace(i);
-
-							LLStrider<LLVector3> position;
-							buffer->getVertexStrider(position);
-
-							LLStrider<LLVector4> weight;
+							LLStrider<LLVector4a> weight;
 							buffer->getWeight4Strider(weight);
 
-							//quick 'n dirty software vertex skinning
-
-							//build matrix palette
-
-							LLMatrix4 mat[64];
-							for (U32 j = 0; j < model->mSkinInfo.mJointNames.size(); ++j)
-							{
-								LLJoint* joint = getPreviewAvatar()->getJoint(model->mSkinInfo.mJointNames[j]);
-								if (joint)
-								{
-									mat[j] = model->mSkinInfo.mInvBindMatrix[j];
-									mat[j] *= joint->getWorldMatrix();
-								}
-							}
-
-							for (S32 j = 0; j < buffer->getNumVerts(); ++j)
-							{
-								LLMatrix4 final_mat;
-								final_mat.mMatrix[0][0] = final_mat.mMatrix[1][1] = final_mat.mMatrix[2][2] = final_mat.mMatrix[3][3] = 0.f;
-
-								LLVector4 wght;
-								S32 idx[4];
-
-								F32 scale = 0.f;
-								for (U32 k = 0; k < 4; k++)
-								{
-									F32 w = weight[j].mV[k];
-
-									idx[k] = (S32) floorf(w);
-									wght.mV[k] = w - floorf(w);
-									scale += wght.mV[k];
-								}
-
-								wght *= 1.f/scale;
-
-								for (U32 k = 0; k < 4; k++)
-								{
-									F32* src = (F32*) mat[idx[k]].mMatrix;
-									F32* dst = (F32*) final_mat.mMatrix;
-
-									F32 w = wght.mV[k];
-
-									for (U32 l = 0; l < 16; l++)
-									{
-										dst[l] += src[l]*w;
-									}
-								}
-
-								//VECTORIZE THIS
-								LLVector3 v(face.mPositions[j].getF32ptr());
-
-								v = v * model->mSkinInfo.mBindShapeMatrix;
-								v = v * final_mat;
-
-								position[j] = v;
-							}
+							getPreviewAvatar()->updateSoftwareSkinnedVertices(&model->mSkinInfo, weight.get(), face, buffer);
 
 							const std::string& binding = instance.mModel->mMaterialList[i];
 							const LLImportMaterial& material = instance.mMaterial[binding];

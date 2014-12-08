@@ -77,8 +77,8 @@ Name "${VIEWERNAME}"
 SubCaption 0 $(LicenseSubTitleSetup)	; override "license agreement" text
 
 BrandingText "Prepare to Implode!"						; bottom of window text
-Icon          %%SOURCE%%\installers\windows\${INSTALL_ICON}
-UninstallIcon %%SOURCE%%\installers\windows\${UNINSTALL_ICON}
+Icon          "%%SOURCE%%\installers\windows\${INSTALL_ICON}"
+UninstallIcon "%%SOURCE%%\installers\windows\${UNINSTALL_ICON}"
 WindowIcon off							; show our icon in left corner
 # BGGradient 9090b0 000000 notext
 CRCCheck on								; make sure CRC is OK
@@ -210,7 +210,8 @@ Function CloseSecondLife
   Push $0
   FindWindow $0 "Second Life" ""
   IntCmp $0 0 DONE
-  MessageBox MB_OKCANCEL $(CloseSecondLifeInstMB) IDOK CLOSE IDCANCEL CANCEL_INSTALL
+  MessageBox MB_YESNOCANCEL $(CloseSecondLifeInstMB) IDYES CLOSE IDNO DONE
+  Goto CANCEL_INSTALL ; IDCANCEL
 
   CANCEL_INSTALL:
     Quit
@@ -436,7 +437,8 @@ Function un.CloseSecondLife
   Push $0
   FindWindow $0 "Second Life" ""
   IntCmp $0 0 DONE
-  MessageBox MB_OKCANCEL $(CloseSecondLifeUnInstMB) IDOK CLOSE IDCANCEL CANCEL_UNINSTALL
+  MessageBox MB_YESNOCANCEL $(CloseSecondLifeUnInstMB) IDYES CLOSE IDNO DONE
+  Goto CANCEL_UNINSTALL ; IDCANCEL
 
   CANCEL_UNINSTALL:
     Quit
@@ -805,6 +807,8 @@ CreateShortCut "$DESKTOP\$INSTSHORTCUT.lnk" \
         "$INSTDIR\$INSTEXE" "$INSTFLAGS $SHORTCUT_LANG_PARAM"
 CreateShortCut "$INSTDIR\$INSTSHORTCUT.lnk" \
         "$INSTDIR\$INSTEXE" "$INSTFLAGS $SHORTCUT_LANG_PARAM"
+CreateShortCut "$INSTDIR\$INSTSHORTCUT Portable.lnk" \
+        "$INSTDIR\$INSTEXE" "$INSTFLAGS $SHORTCUT_LANG_PARAM --portable"
 CreateShortCut "$INSTDIR\Uninstall $INSTSHORTCUT.lnk" \
 				'"$INSTDIR\uninst.exe"' ''
 

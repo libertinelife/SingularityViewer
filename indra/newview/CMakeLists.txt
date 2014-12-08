@@ -183,6 +183,7 @@ set(viewer_SOURCE_FILES
     llfloateractivespeakers.cpp
     llfloaterauction.cpp
     llfloaterautoreplacesettings.cpp
+    llfloateravatar.cpp
     llfloateravatarinfo.cpp
     llfloateravatarlist.cpp
     llfloateravatarpicker.cpp
@@ -204,6 +205,7 @@ set(viewer_SOURCE_FILES
     llfloatercolorpicker.cpp
     llfloatercustomize.cpp
     llfloaterdaycycle.cpp
+    llfloaterdestinations.cpp
     llfloaterdirectory.cpp
     llfloaterdisplayname.cpp
     llfloatereditui.cpp
@@ -216,6 +218,7 @@ set(viewer_SOURCE_FILES
     llfloaterfriends.cpp
     llfloatergesture.cpp
     llfloatergodtools.cpp
+    llfloatergroupbulkban.cpp
     llfloatergroupinfo.cpp
     llfloatergroupinvite.cpp
     llfloatergroups.cpp
@@ -231,6 +234,7 @@ set(viewer_SOURCE_FILES
     llfloaterlandholdings.cpp
     llfloaterlandmark.cpp
     llfloatermap.cpp
+    llfloatermediafilter.cpp
     llfloatermediasettings.cpp
     llfloatermemleak.cpp
     llfloatermessagelog.cpp
@@ -240,6 +244,7 @@ set(viewer_SOURCE_FILES
     llfloaternamedesc.cpp
     llfloaternotificationsconsole.cpp
     llfloaterobjectiminfo.cpp
+    llfloaterobjectweights.cpp
     llfloateropenobject.cpp
     llfloateroutbox.cpp
     llfloaterparcel.cpp
@@ -253,6 +258,7 @@ set(viewer_SOURCE_FILES
     llfloaterproperties.cpp
     llfloaterregiondebugconsole.cpp
     llfloaterregioninfo.cpp
+    llfloaterregionrestarting.cpp
     llfloaterreporter.cpp
     llfloaterscriptdebug.cpp
     llfloaterscriptlimits.cpp
@@ -331,6 +337,7 @@ set(viewer_SOURCE_FILES
     llmaterialmgr.cpp
     llmediactrl.cpp
     llmediadataclient.cpp
+    llmediafilter.cpp
     llmediaremotectrl.cpp
     llmenucommands.cpp
     llmenuoptionpathfindingrebakenavmesh.cpp
@@ -366,6 +373,8 @@ set(viewer_SOURCE_FILES
     llpanelface.cpp
     llpanelgeneral.cpp
     llpanelgroup.cpp
+    llpanelgroupbulk.cpp
+    llpanelgroupbulkban.cpp
     llpanelgroupgeneral.cpp
     llpanelgroupinvite.cpp
     llpanelgrouplandmoney.cpp
@@ -435,6 +444,7 @@ set(viewer_SOURCE_FILES
     llscrollingpanelparam.cpp
     llscrollingpanelparambase.cpp
     llselectmgr.cpp
+    llshareavatarhandler.cpp
     llsky.cpp
     llslurl.cpp
     llspatialpartition.cpp
@@ -589,7 +599,6 @@ set(viewer_SOURCE_FILES
     sgversion.cpp
     shcommandhandler.cpp
     shfloatermediaticker.cpp
-    slfloatermediafilter.cpp
     wlfPanel_AdvSettings.cpp
     )
 
@@ -704,6 +713,7 @@ set(viewer_HEADER_FILES
     llfloateractivespeakers.h
     llfloaterauction.h
     llfloaterautoreplacesettings.h
+    llfloateravatar.h
     llfloateravatarinfo.h
     llfloateravatarlist.h
     llfloateravatarpicker.h
@@ -725,6 +735,7 @@ set(viewer_HEADER_FILES
     llfloatercolorpicker.h
     llfloatercustomize.h
     llfloaterdaycycle.h
+    llfloaterdestinations.h
     llfloaterdirectory.h
     llfloaterdisplayname.h
     llfloatereditui.h
@@ -737,6 +748,7 @@ set(viewer_HEADER_FILES
     llfloaterfriends.h
     llfloatergesture.h
     llfloatergodtools.h
+    llfloatergroupbulkban.h
     llfloatergroupinfo.h
     llfloatergroupinvite.h
     llfloatergroups.h
@@ -752,6 +764,7 @@ set(viewer_HEADER_FILES
     llfloaterlandholdings.h
     llfloaterlandmark.h
     llfloatermap.h
+    llfloatermediafilter.h
     llfloatermediasettings.h
     llfloatermemleak.h
     llfloatermessagelog.h
@@ -761,6 +774,7 @@ set(viewer_HEADER_FILES
     llfloaternamedesc.h
     llfloaternotificationsconsole.h
     llfloaterobjectiminfo.h
+    llfloaterobjectweights.h
     llfloateropenobject.h
     llfloateroutbox.h
     llfloaterparcel.h
@@ -774,6 +788,7 @@ set(viewer_HEADER_FILES
     llfloaterproperties.h
     llfloaterregiondebugconsole.h
     llfloaterregioninfo.h
+    llfloaterregionrestarting.h
     llfloaterreporter.h
     llfloaterscriptdebug.h
     llfloaterscriptlimits.h
@@ -852,6 +867,7 @@ set(viewer_HEADER_FILES
     llmaterialmgr.h
     llmediactrl.h
     llmediadataclient.h
+    llmediafilter.h
     llmediaremotectrl.h
     llmenucommands.h
     llmenuoptionpathfindingrebakenavmesh.h
@@ -887,6 +903,9 @@ set(viewer_HEADER_FILES
     llpanelface.h
     llpanelgeneral.h
     llpanelgroup.h
+    llpanelgroupbulk.h
+    llpanelgroupbulkban.h
+    llpanelgroupbulkimpl.h
     llpanelgroupgeneral.h
     llpanelgroupinvite.h
     llpanelgrouplandmoney.h
@@ -1113,12 +1132,12 @@ set(viewer_HEADER_FILES
     rlvinventory.h
     rlvlocks.h
     rlvui.h
+    roles_constants.h
     scriptcounter.h
     sgmemstat.h
     sgversion.h
     shcommandhandler.h
     shfloatermediaticker.h
-    slfloatermediafilter.h
     wlfPanel_AdvSettings.h
     VertexCache.h
     VorbisFramework.h
@@ -1280,6 +1299,7 @@ if (WINDOWS)
         shell32
         user32
         Vfw32
+        Wbemuuid
         winspool
         )
 
@@ -1438,7 +1458,7 @@ if (!DISABLE_TEMPLATE_CHECK)
 endif (!DISABLE_TEMPLATE_CHECK)
 
 set(PACKAGE OFF CACHE BOOL
-    "Add a package target that builds an installer package.")
+    "Add a package_viewer target that builds an installer package.")
 
 if (WINDOWS)
     set(release_flags "/MAPRelease/${VIEWER_BINARY_NAME}.map")
@@ -1564,7 +1584,7 @@ if (WINDOWS)
     add_dependencies(${VIEWER_BINARY_NAME} SLPlugin media_plugin_quicktime media_plugin_webkit basic_plugin_filepicker winmm_shim)
 
     if (PACKAGE)
-      add_custom_target(package ALL DEPENDS ${CMAKE_CFG_INTDIR}/touched.bat)
+      add_custom_target(package_viewer ALL DEPENDS ${CMAKE_CFG_INTDIR}/touched.bat)
     endif (PACKAGE)
 endif (WINDOWS)
 
@@ -1692,8 +1712,8 @@ if (LINUX)
   add_custom_target(copy_l_viewer_manifest ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.copy_touched)
 
   if (PACKAGE)
-    add_custom_target(package ALL DEPENDS ${product}.tar.bz2)
-    add_dependencies(package copy_l_viewer_manifest)
+    add_custom_target(package_viewer ALL DEPENDS ${product}.tar.bz2)
+    add_dependencies(package_viewer copy_l_viewer_manifest)
   endif (PACKAGE)
 endif (LINUX)
 
@@ -1742,10 +1762,10 @@ if (DARWIN)
   endif (FMODEX)
 
   if (PACKAGE)
-      add_custom_target(package ALL DEPENDS ${VIEWER_BINARY_NAME})
+      add_custom_target(package_viewer ALL DEPENDS ${VIEWER_BINARY_NAME})
 
       add_custom_command(
-        TARGET package POST_BUILD
+        TARGET package_viewer POST_BUILD
         COMMAND ${PYTHON_EXECUTABLE}
         ARGS
           ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
@@ -1759,7 +1779,7 @@ if (DARWIN)
           --grid=${GRID}
           --login_channel=${VIEWER_LOGIN_CHANNEL}
           --source=${CMAKE_CURRENT_SOURCE_DIR}
-          --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${Product}.touched
+          --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.touched
         DEPENDS
           ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
       )
@@ -1771,7 +1791,6 @@ if (INSTALL)
 endif (INSTALL)
 
 if (PACKAGE)
-
   set(SYMBOL_SEARCH_DIRS "")
   if (WINDOWS)
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}")
@@ -1796,7 +1815,7 @@ if (PACKAGE)
   if (LINUX)
     list(APPEND SYMBOL_SEARCH_DIRS "${CMAKE_CURRENT_BINARY_DIR}/packaged")
     set(VIEWER_SYMBOL_FILE "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/secondlife-symbols-linux.tar.bz2")
-    set(VIEWER_EXE_GLOBS "singularity-do-not-run-directly SLPlugin")
+    set(VIEWER_EXE_GLOBS "${VIEWER_BRANDING_ID}-do-not-run-directly SLPlugin")
     set(VIEWER_LIB_GLOB "*${CMAKE_SHARED_MODULE_SUFFIX}*")
     set(VIEWER_COPY_MANIFEST copy_l_viewer_manifest)
   endif (LINUX)
@@ -1824,7 +1843,7 @@ if (PACKAGE)
 
   add_custom_target(generate_breakpad_symbols DEPENDS "${VIEWER_SYMBOL_FILE}")
   add_dependencies(generate_breakpad_symbols "${VIEWER_BINARY_NAME}" "${VIEWER_COPY_MANIFEST}")
-  add_dependencies(package generate_breakpad_symbols)
+  add_dependencies(package_viewer generate_breakpad_symbols)
   endif(RELEASE_CRASH_REPORTING OR NON_RELEASE_CRASH_REPORTING)
 endif (PACKAGE)
 
@@ -1861,7 +1880,7 @@ if (WINDOWS)
 
     set_target_properties(llcommon
         PROPERTIES
-        LINK_FLAGS "/debug /NODEFAULTLIB:LIBCMT"
+        LINK_FLAGS "/debug /NODEFAULTLIB:LIBCMT /LTCG"
         LINK_FLAGS_DEBUG "/NODEFAULTLIB:\"LIBCMT;LIBCMTD;MSVCRT\""
         )
 

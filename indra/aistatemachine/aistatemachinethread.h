@@ -182,7 +182,7 @@ class AIStateMachineThreadBase : public AIStateMachine {
 
   protected:
 	AIStateMachineThreadBase(CWD_ONLY(bool debug))
-#if defined(CWDEBUG) || defined(DEBUG_CURLIO)
+#ifdef CWDEBUG
 	  : AIStateMachine(debug)
 #endif
 	{ }
@@ -222,7 +222,7 @@ class AIStateMachineThread : public AIStateMachineThreadBase {
   public:
 	// Constructor.
 	AIStateMachineThread(CWD_ONLY(bool debug))
-#if defined(CWDEBUG) || defined(DEBUG_CURLIO)
+#ifdef CWDEBUG
 		: AIStateMachineThreadBase(debug)
 #endif
 	{
@@ -231,6 +231,13 @@ class AIStateMachineThread : public AIStateMachineThreadBase {
 
 	// Accessor.
 	THREAD_IMPL& thread_impl(void) { return mThreadImpl; }
+
+	/*virtual*/ const char* getName() const
+	{
+#define STRIZE(arg) #arg
+		return "AIStateMachineThread<"STRIZE(THREAD_IMPL)">";
+#undef STRIZE
+	}
 
   protected:
 	/*virtual*/ AIThreadImpl& impl(void) { return mThreadImpl; }

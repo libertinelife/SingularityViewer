@@ -492,7 +492,6 @@ void LLVOGrass::plantBlades()
 	mDepth = (face->mCenterLocal - LLViewerCamera::getInstance()->getOrigin())*LLViewerCamera::getInstance()->getAtAxis();
 	mDrawable->setPosition(face->mCenterLocal);
 	mDrawable->movePartition();
-	LLPipeline::sCompiles++;
 }
 
 void LLVOGrass::getGeometry(S32 idx,
@@ -620,7 +619,6 @@ void LLVOGrass::getGeometry(S32 idx,
 		index_offset   += 8;
 	}
 
-	LLPipeline::sCompiles++;
 }
 
 U32 LLVOGrass::getPartitionType() const
@@ -775,6 +773,11 @@ void LLGrassPartition::getGeometry(LLSpatialGroup* group)
 			//for alpha sorting
 			facep->setDrawInfo(info);
 		}
+	}
+
+	if(vertex_count > 0)
+	{
+		buffer->validateRange(0,  vertex_count - 1, index_count, 0);
 	}
 
 	buffer->flush();

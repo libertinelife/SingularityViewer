@@ -47,12 +47,10 @@
 			     name="Legs" scale_image="true" width="82" />
 			<radio_group bottom="-387" control_name="AvatarSex" draw_border="true" follows="left|top"
 			     height="34" left="8" mouse_opaque="true" name="sex radio" width="82">
-				<radio_item type="string" length="1" bottom="-17" follows="left|top" height="16" left="1" mouse_opaque="true"
-				     name="radio" width="82">
+				<radio_item bottom="-17" follows="left|top" height="16" left="1" name="radio" width="82" value="0">
 					Female
 				</radio_item>
-				<radio_item type="string" length="1" bottom="-33" follows="left|top" height="16" left="1" mouse_opaque="true"
-				     name="radio2" width="82">
+				<radio_item bottom="-33" follows="left|top" height="16" left="1" name="radio2" width="82" value="1">
 					Male
 				</radio_item>
 			</radio_group>
@@ -1290,11 +1288,11 @@ one from scratch and wear it.
              can_apply_immediately="true" default_image_name="Default" allow_no_texture="true"
              follows="left|top" width="64" height="80" left_delta="90" bottom="-165"/>
             <check_box name="head alpha texture invisible"
-             follows="left" width="16" height="16" left="142" bottom="-185"/>
+             follows="left" width="16" height="16" left="142" bottom="-90"/>
             <check_box name="upper alpha texture invisible"
-             follows="left" width="16" height="16" left_delta="90" bottom="-185"/>
+             follows="left" width="16" height="16" left_delta="90" bottom="-90"/>
             <check_box name="lower alpha texture invisible"
-             follows="left" width="16" height="16" left_delta="90" bottom="-185"/>
+             follows="left" width="16" height="16" left_delta="90" bottom="-90"/>
             <texture_picker name="Hair Alpha" label="Hair Alpha" tool_tip="Click to choose a picture"
              can_apply_immediately="true" default_image_name="Default" allow_no_texture="true"
              follows="left|top" width="64" height="80" left="120" bottom="-280"/>
@@ -1302,9 +1300,9 @@ one from scratch and wear it.
              can_apply_immediately="true" default_image_name="Default" allow_no_texture="true"
              follows="left|top" width="64" height="80" left_delta="90" bottom="-280"/>
             <check_box name="hair alpha texture invisible"
-             follows="left" width="16" height="16" left="142" bottom="-300"/>
+             follows="left" width="16" height="16" left="142" bottom="-205"/>
             <check_box name="eye alpha texture invisible"
-             follows="left" width="16" height="16" left_delta="90" bottom="-300"/>
+             follows="left" width="16" height="16" left_delta="90" bottom="-205"/>
 			<button name="Create New" label="Create New Alpha" label_selected="Create New Alpha"
                  follows="left|top" halign="center" width="170" height="24" left="160" bottom="-148"
 			     mouse_opaque="true" scale_image="true"/>
@@ -1447,11 +1445,10 @@ one from scratch and wear it.
 	<button bottom="-536" follows="right|bottom" font="SansSerif" halign="center"
 	     height="20" label="OK" label_selected="OK" mouse_opaque="true"
 	     name="Ok" right="-116" scale_image="true" width="100" />
-	<button bottom="-536" follows="left|bottom" font="SansSerif" halign="center"
+	<flyout_button bottom="-536" follows="left|bottom" font="SansSerif" halign="center"
 	     height="20" label="Make Outfit..." label_selected="Make Outfit..."
 	     mouse_opaque="true" name="Make Outfit" left="10" scale_image="true"
-	     width="100" />
-    <button bottom="-536" follows="left|bottom" height="20" left="110" width="100" name="Save Outfit" label="Save Outfit"/>
+	     width="120" />
     <string name="Save changes to" value="Save changes to [OUTFIT]"/>
     <string name="No Outfit" value="No Outfit"/>
     <string name="Changing outfits" value="Changing outfits"/>

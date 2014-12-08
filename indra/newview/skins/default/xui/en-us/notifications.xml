@@ -151,7 +151,7 @@
    icon="alert.tga"
    name="MediaAlert"
    type="alert">
-The owner of this parcel has requested the following [TYPE] URL to be loaded by your viewer:
+The owner of this parcel has requested the following [MEDIA_TYPE] URL to be loaded by your viewer:
 
 [URL]
 
@@ -179,12 +179,25 @@ You may choose to allow or deny the corresponding domain or in-world scripted ob
 	 text="Whitelist"/>
    </form>
   </notification>
-
+  
   <notification
-   icon="alert.tga"
-   name="MediaListed"
-   type="alert">
-Media/audio URLs for [DOMAIN] now [LISTED]
+   icon="alertmodal.tga"
+   name="AddToMediaList"
+   type="alertmodal">
+Enter a domain name to be added to the [LIST]:
+    <tag>confirm</tag>
+    <form name="form">
+      <input name="url" type="text" default="true" />
+      <button
+       default="true"
+       index="0"
+       name="Add"
+       text="Add"/>
+      <button
+       index="1"
+       name="Cancel"
+       text="Cancel"/>
+    </form>
   </notification>
 
   <notification
@@ -192,13 +205,6 @@ Media/audio URLs for [DOMAIN] now [LISTED]
    name="MediaBlocked"
    type="notifytip">
 Media/audio URL blocked for [DOMAIN]
-  </notification>
-
-  <notification
-   icon="alertmodal.tga"
-   name="MediaFiltersCleared"
-   type="alertmodal">
-The media filters have been cleared
   </notification>
 
   <notification
@@ -614,6 +620,34 @@ Add this Ability to &apos;[ROLE_NAME]&apos;?
 
   <notification
    icon="alertmodal.tga"
+   name="AssignBanAbilityWarning"
+   type="alertmodal">
+You are about to add the Ability &apos;[ACTION_NAME]&apos; to the Role &apos;[ROLE_NAME]&apos;.
+
+ *WARNING*
+Any Member in a Role with this Ability will also be granted the Abilities &apos;[ACTION_NAME_2]&apos; and &apos;[ACTION_NAME_3]&apos;
+    <usetemplate
+     name="okbutton"
+     yestext="OK"/>
+  </notification>
+
+  <notification
+   icon="alertmodal.tga"
+   name="RemoveBanAbilityWarning"
+   type="alertmodal">
+You are removing the Ability &apos;[ACTION_NAME]&apos; to the Role &apos;[ROLE_NAME]&apos;.
+
+ *WARNING*
+Removing this ability will NOT remove the Abilities &apos;[ACTION_NAME_2]&apos; and &apos;[ACTION_NAME_3]&apos;.
+
+If you no longer wish to have these abilities granted to this role, disable them immediately!
+    <usetemplate
+     name="okbutton"
+     yestext="OK"/>
+  </notification>
+
+  <notification
+   icon="alertmodal.tga"
    name="AttachmentDrop"
    type="alertmodal">
 You are about to drop your attachment.
@@ -691,13 +725,6 @@ Go to the [SECOND_LIFE] web site for more information on partnering?
      name="okcancelbuttons"
      notext="Cancel"
      yestext="Go to Page"/>
-  </notification>
-
-  <notification
-   icon="alertmodal.tga"
-   name="ClickUploadHelpPermissions"
-   type="alertmodal">
-Your default permissions may not work in older regions.
   </notification>
 
   <notification
@@ -1581,6 +1608,15 @@ Eject [AVATAR_NAME] from your land?
 
   <notification
    icon="alertmodal.tga"
+   name="EjectAvatarFromGroup"
+   persist="true"
+   type="notifytip">
+You ejected [AVATAR_NAME] from group [GROUP_NAME]
+    <tag>group</tag>
+  </notification>
+
+  <notification
+   icon="alertmodal.tga"
    name="AcquireErrorTooManyObjects"
    type="alertmodal">
 ACQUIRE ERROR: Too many objects selected.
@@ -2104,15 +2140,6 @@ Unable to deed land:
 Multiple parcels selected.
 
 Try selecting a single parcel.
-  </notification>
-
-  <notification
-   icon="notifytip.tga"
-   name="DeedToGroupFail"
-   type="notifytip">
-    Deed to group failed.
-    <tag>group</tag>
-    <tag>fail</tag>
   </notification>
 
   <notification
@@ -3237,10 +3264,10 @@ Visit the [SECOND_LIFE] Public Issue Tracker, where you can report bugs and othe
    icon="alertmodal.tga"
    name="WebLaunchSinguIssue"
    type="alertmodal">
-Visit the Singularity Issue Tracker, to report bugs and issues with Singularity Viewer.
+Visit the [SHORT_APP_NAME] Issue Tracker, to report bugs and issues with [SHORT_APP_NAME] Viewer.
 Please be sure that your report won't be a duplicate of an existing one.
     <usetemplate
-     ignoretext="When launching web browser to view Singularity Issue Tracker"
+     ignoretext="When launching web browser to view [SHORT_APP_NAME] Issue Tracker"
      name="okcancelignore"
      notext="Cancel"
      yestext="Go to page"/>
@@ -3317,6 +3344,39 @@ Leave Group?
     <usetemplate
      name="okcancelbuttons"
      notext="Cancel"
+     yestext="OK"/>
+  </notification>
+
+  <notification
+   icon="alertmodal.tga"
+   name="OwnerCannotLeaveGroup"
+   type="alertmodal">
+    Unable to leave group. You cannot leave the group because you are the last owner of the group. Please assign another member to the owner role first.
+    <tag>group</tag>
+    <usetemplate
+     name="okbutton"
+     yestext="OK"/>
+  </notification>
+
+  <notification
+   icon="alert.tga"
+   name="GroupDepartError"
+   type="alert">
+Unable to leave group: [reason].
+    <tag>reason</tag>
+    <usetemplate
+     name="okbutton"
+     yestext="OK"/>
+  </notification>
+
+  <notification
+   icon="alert.tga"
+   name="GroupDepart"
+   type="alert">
+You have left the group [group_name].
+    <tag>group_name</tag>
+    <usetemplate
+     name="okbutton"
      yestext="OK"/>
   </notification>
 
@@ -3676,6 +3736,18 @@ Join me in [REGION]
 Are you sure you want to teleport?
     <usetemplate
      ignoretext="When teleporting from a landmark in inventory"
+     name="okcancelignore"
+     notext="Cancel"
+     yestext="Teleport"/>
+  </notification>
+
+  <notification
+   icon="alertmodal.tga"
+   name="TeleportViaSLAPP"
+   type="alertmodal">
+Are you sure you want to teleport to [LOCATION]?
+    <usetemplate
+     ignoretext="Confirm that I want to teleport via SLAPP"
      name="okcancelignore"
      notext="Cancel"
      yestext="Teleport"/>
@@ -5857,11 +5929,25 @@ A login URI is required to retrieve the grid info.
 Builds with extended hollow or extended hole size do not render properly on other viewers. Please keep this option checked, if you want your builds looking properly in other viewers.
   </notification>
 
+<notification
+   icon="alertmodal.tga"
+   name="ImportFailed"
+   type="alertmodal">
+Bad XML file. Import aborted.
+</notification>
+
+<notification
+   icon="notifytip.tga"
+   name="ExportAborted"
+   type="notifytip">
+The Object was deselected before the export could occur. Export aborted.
+</notification>
+
   <notification
    icon="alertmodal.tga"
    name="ExportFailed"
    type="alertmodal">
-None of the selected objects are exportable. Export aborted.
+Bad permissions for the exported object. Export aborted.
   </notification>
 
   <notification
@@ -5877,6 +5963,23 @@ Object exported. Some textures could not be saved due to: [REASON]
    type="notifytip">
 Export successful.
   </notification>
+
+<notification
+   icon="alertmodal.tga"
+   name="ConfirmAbortBackup"
+   type="alertmodal">
+Are you sure you want to abort the current object backup operation?
+    <form name="form">
+      <button
+       index="0"
+       name="Yes"
+       text="Yes"/>
+      <button
+       index="1"
+       name="No"
+       text="No"/>
+    </form>
+</notification>
 
   <notification
    icon="notifytip.tga"
@@ -6798,6 +6901,16 @@ An object named [OBJECTFROMNAME] owned by (an unknown user) has given you a [OBJ
 
   <notification
    icon="notify.tga"
+   name="TeleportOfferSent"
+   log_to_im="true"
+   log_to_chat="false"
+   show_toast="false"
+   type="notifytip">
+    Teleport offer sent to [TO_NAME]
+  </notification>
+
+  <notification
+   icon="notify.tga"
    name="TeleportRequest"
    type="notify">
 [NAME] is requesting to be teleported to your location.
@@ -6942,20 +7055,20 @@ This will add a bookmark in your inventory so you can quickly IM this resident.
   <notification
    icon="notify.tga"
    name="RegionRestartMinutes"
+   show_toast="false"
    priority="high"
-   sound="UISndAlert"
    type="notify">
-Region is restarting in [MINUTES] minutes.
+This region will restart in [MINUTES] minutes.
 If you remain in this region you will be logged out.
   </notification>
 
   <notification
    icon="notify.tga"
    name="RegionRestartSeconds"
+   show_toast="false"
    priority="high"
-   sound="UISndAlert"
    type="notify">
-Region is restarting in [SECONDS] seconds.
+This region will restart in [SECONDS] seconds.
 If you remain in this region you will be logged out.
   </notification>
 
@@ -7617,6 +7730,13 @@ Server Error: Media update or get failed.
     </notification>
 
   <notification
+   icon="notifytip.tga"
+   name="ShareNotification"
+   type="notifytip">
+Select residents to share with.
+  </notification>
+
+  <notification
     name="MeshUploadError"
     icon="alert.tga"
     type="alert">
@@ -7637,6 +7757,61 @@ See the log file for details.
     icon="alert.tga"
     type="alert">
     Could not get region capability &apos;[CAPABILITY]&apos;.
+  </notification>
+
+
+  <notification
+   icon="notifytip.tga"
+   name="ShareItemsConfirmation"
+   type="alertmodal">
+Are you sure you want to share the following items:
+
+[ITEMS]
+
+With the following Residents:
+
+[RESIDENTS]
+  <tag>confirm</tag>
+	<usetemplate
+     name="okcancelbuttons"
+     notext="Cancel"
+     yestext="OK"/>
+  </notification>
+  
+  <notification
+   icon="notifytip.tga"
+   name="ShareFolderConfirmation"
+   type="alertmodal">
+Only one folder at a time can be shared.
+
+Are you sure you want to share the following items:
+
+[ITEMS]
+
+With the following Residents:
+
+[RESIDENTS]
+  <tag>confirm</tag>
+	<usetemplate
+     name="okcancelbuttons"
+     notext="Cancel"
+     yestext="Ok"/>
+  </notification>
+  
+  <notification
+   icon="notifytip.tga"
+   name="ItemsShared"
+   type="notifytip">
+Items successfully shared.
+  </notification>
+
+  <notification
+   icon="notifytip.tga"
+   name="DeedToGroupFail"
+   type="notifytip">
+    Deed to group failed.
+    <tag>group</tag>
+    <tag>fail</tag>
   </notification>
 
   <notification
@@ -7877,6 +8052,24 @@ Only textures will upload as temporary on Agni and Aditi.
      notext="Permanent"
      yestext="Temporary"
      canceltext="Cancel"/>
+  </notification>
+
+  <notification
+  name="AuthRequest"
+  type="browser">
+The site at &apos;[HOST_NAME]&apos; in realm &apos;[REALM]&apos; requires a user name and password.
+    <tag>confirm</tag>
+    <form name="form">
+      <input name="username" type="text" text="User Name"/>
+      <input name="password" type="password" text="Password    "/>
+      <button default="true"
+              index="0"
+              name="ok"
+              text="Submit"/>
+      <button index="1"
+              name="cancel"
+              text="Cancel"/>
+    </form>
   </notification>
 
   <notification
@@ -9740,6 +9933,17 @@ An internal error prevented us from properly updating your viewer.  The L$ balan
 Cannot create large prims that intersect other players.  Please re-try when other players have moved.
   </notification>
 
+  <notification
+   icon="alertmodal.tga"
+   name="DefaultObjectPermissions"
+   type="alert">
+There was a problem saving the default permissions due to the following reason: [REASON].  Please try setting the default permissions later.
+   <tag>fail</tag>
+   <usetemplate
+     name="okbutton"
+     yestext="OK"/>
+  </notification>
+
 
 <!-- Singularity Specific notifications should go below here, alphabetically -->
 <!-- Singu Note: RLVa notifications come first here -->
@@ -9765,6 +9969,17 @@ AntiSpam: Blocked [SOURCE] for spamming [TYPE]s [AMOUNT] times in [TIME] seconds
 AntiSpam: Blocked newline flood from [SOURCE] (over [AMOUNT] newlines).
   </notification>
 
+
+  <notification
+   icon="alertmodal.tga"
+   name="ConfirmDeleteUser"
+   type="alertmodal">
+Are you sure you want to delete the selected user?
+    <usetemplate
+     name="okcancelbuttonscanceldefault"
+     yestext="Yes"
+     notext="No"/>
+  </notification>
 
   <notification
    icon="alertmodal.tga"

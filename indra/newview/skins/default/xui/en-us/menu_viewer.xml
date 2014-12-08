@@ -5,17 +5,17 @@
 	<menu bottom="273" create_jump_keys="true" drop_shadow="true" enabled="true"
 	    height="263" label="File" left="0" mouse_opaque="false" name="File"
 	    opaque="true" tear_off="true" width="243">
-    <menu_item_call enabled="true" label="Image ([UPLOADFEE])..."
+    <menu_item_call enabled="true" label="Upload Image ([UPLOADFEE])..."
         mouse_opaque="true" name="Upload Image" shortcut="control|U" >
 		<on_click function="File.UploadImage" userdata="" />
 		<on_enable function="File.EnableUpload" />
     </menu_item_call>
-    <menu_item_call label="Sound ([UPLOADFEE])..." name="Upload Sound"
+    <menu_item_call label="Upload Sound ([UPLOADFEE])..." name="Upload Sound"
         mouse_opaque="true" enabled="true" >
         <on_click function="File.UploadSound" userdata="" />
         <on_enable function="File.EnableUpload" />
     </menu_item_call>
-    <menu_item_call label="Animation ([UPLOADFEE])..." name="Upload Animation"
+    <menu_item_call label="Upload Animation ([UPLOADFEE])..." name="Upload Animation"
         mouse_opaque="true" enabled="true"  >
         <on_click function="File.UploadAnim" userdata="" />
         <on_enable function="File.EnableUpload" />
@@ -25,11 +25,11 @@
         <on_click function="File.UploadModel" userdata="" />
         <on_enable function="File.EnableUploadModel" />
     </menu_item_call>
-    <menu_item_call label="Bulk ([UPLOADFEE] per file)..." name="Bulk Upload"
+    <menu_item_call label="Bulk Upload ([UPLOADFEE] per file)..." name="Bulk Upload"
         mouse_opaque="true" enabled="true" >
         <on_click function="File.UploadBulk" userdata="" />
     </menu_item_call>
-	<menu_item_call enabled="false" hidden="false" label="Import XML" mouse_opaque="true" name="Import">
+	<menu_item_call enabled="false" hidden="false" label="Import Object XML" mouse_opaque="true" name="Import">
 		<on_click function="Object.Import" />
 		<on_enable function="Object.EnableImport" />
 	</menu_item_call>
@@ -279,7 +279,7 @@
 		</menu_item_call>
 	</menu>
 	<menu bottom="-1" create_jump_keys="true" drop_shadow="true" enabled="true"
-	     height="537" label="View" left="80" mouse_opaque="false" name="View"
+	     height="537" label="View" left="80" mouse_opaque="false" name="View" scrollable="true"
 	     opaque="true" tear_off="true" width="211">
 		<tearoff_menu bottom="-10" enabled="true" height="10" label="~~~~~~~~~~~" left="0"
 		     mouse_opaque="true" name="~~~~~~~~~~~" width="211" />
@@ -321,8 +321,8 @@
 		     mouse_opaque="true" name="separator" width="211" />
 		<menu_item_check bottom="-113" enabled="true" height="19" label="Toolbar" left="0"
 		     mouse_opaque="true" name="Toolbar" width="211">
-			<on_click function="ShowFloater" userdata="toolbar" />
-			<on_check function="FloaterVisible" userdata="toolbar" />
+			<on_click function="ToggleControl" userdata="ShowToolBar"/>
+			<on_check control="ShowToolBar"/>
 		</menu_item_check>
 		<menu_item_call label="Change toolbar buttons" name="toolbar_prefs">
 			<on_click function="ShowFloater" userdata="floater_toolbar_prefs.xml"/>
@@ -356,11 +356,6 @@
 						 mouse_opaque="true" name="Teleport History" shortcut="alt|H" width="211">
 			<on_click function="ShowFloater" userdata="teleport history" />
 			<on_check function="FloaterVisible" userdata="teleport history" />
-		</menu_item_check>
-		<menu_item_check bottom="-192" enabled="true" height="19" label="Media Filter" left="0"
-		     mouse_opaque="true" name="Media Filter" width="211">
-			<on_click function="ShowFloater" userdata="media filter" />
-			<on_check function="FloaterVisible" userdata="media filter" />
 		</menu_item_check>
 		<menu_item_separator bottom="-197" enabled="true" height="8" label="-----------" left="0"
 		     mouse_opaque="true" name="separator2" width="211" />
@@ -590,6 +585,16 @@
         <menu_item_call bottom="-29" height="19" label="Favorites" left="0" name="Favorites" width="166">
             <on_click function="ShowFloater" userdata="floater_inventory_favs.xml" />
         </menu_item_call>
+        <menu_item_check label="Default Avatars" name="Avatar Picker">
+            <on_click function="ShowFloater" userdata="avatar"/>
+            <on_check function="FloaterVisible" userdata="avatar"/>
+            <!--on_visible /-->
+        </menu_item_check>
+        <menu_item_check label="Destinations" name="Destinations">
+            <on_click function="ShowFloater" userdata="destinations"/>
+            <on_check function="FloaterVisible" userdata="destinations"/>
+            <on_visible function="World.VisibleDestinations"/>
+        </menu_item_check>
         <menu_item_separator bottom="-213" label="-----------" left="0" name="separator5"/>
 		<menu_item_call bottom="-251" enabled="true" height="19" label="My Land..." left="0"
 		     mouse_opaque="true" name="My Land..." width="185">
@@ -614,26 +619,36 @@
 		<menu bottom="-554" create_jump_keys="true" drop_shadow="true" enabled="true"
 		     height="117" label="Environment Settings" left="0" mouse_opaque="false"
 		     name="Environment Settings" opaque="true" tear_off="true" width="169">
-			<menu_item_call bottom="-29" enabled="true" height="19" label="Sunrise" left="0"
+			<menu_item_check bottom="-29" enabled="true" height="19" label="Sunrise" left="0"
 			     mouse_opaque="true" name="Sunrise" width="169">
 				<on_click function="World.EnvSettings" userdata="sunrise" />
-			</menu_item_call>
-			<menu_item_call bottom="-48" enabled="true" height="19" label="Midday" left="0"
+				<on_check function="World.EnableEnvSettings" userdata="sunrise" />
+				<on_enable function="RLV.EnableIfNot" userdata="setenv"/>
+			</menu_item_check>
+			<menu_item_check bottom="-48" enabled="true" height="19" label="Midday" left="0"
 			     mouse_opaque="true" name="Noon" shortcut="control|shift|Y" width="169">
 				<on_click function="World.EnvSettings" userdata="noon" />
-			</menu_item_call>
-			<menu_item_call bottom="-67" enabled="true" height="19" label="Sunset" left="0"
+				<on_check function="World.EnableEnvSettings" userdata="noon" />
+				<on_enable function="RLV.EnableIfNot" userdata="setenv"/>
+			</menu_item_check>
+			<menu_item_check bottom="-67" enabled="true" height="19" label="Sunset" left="0"
 			     mouse_opaque="true" name="Sunset" shortcut="control|shift|N" width="169">
 				<on_click function="World.EnvSettings" userdata="sunset" />
-			</menu_item_call>
-			<menu_item_call bottom="-86" enabled="true" height="19" label="Midnight" left="0"
+				<on_check function="World.EnableEnvSettings" userdata="sunset" />
+				<on_enable function="RLV.EnableIfNot" userdata="setenv"/>
+			</menu_item_check>
+			<menu_item_check bottom="-86" enabled="true" height="19" label="Midnight" left="0"
 			     mouse_opaque="true" name="Midnight" width="169">
 				<on_click function="World.EnvSettings" userdata="midnight" />
-			</menu_item_call>
-			<menu_item_call bottom="-105" enabled="false" height="19" label="Revert to Region Default"
+				<on_check function="World.EnableEnvSettings" userdata="midnight" />
+				<on_enable function="RLV.EnableIfNot" userdata="setenv"/>
+			</menu_item_check>
+			<menu_item_check bottom="-105" enabled="false" height="19" label="Revert to Region Default"
 			     left="0" mouse_opaque="true" name="Revert to Region Default" width="169">
 				<on_click function="World.EnvSettings" userdata="default" />
-			</menu_item_call>
+				<on_check function="World.EnableEnvSettings" userdata="region" />
+				<on_enable function="RLV.EnableIfNot" userdata="setenv"/>
+			</menu_item_check>
 			<menu_item_separator bottom="-113" enabled="true" height="8" label="-----------" left="0"
 			     mouse_opaque="true" name="separator" width="169" />
       <menu_item_call bottom="-132" enabled="false" height="19" label="Environment Editor" left="0"
@@ -983,7 +998,7 @@
 				<on_click function="PromptShowURL" name="RequestFeature_url" userdata="WebLaunchSinguIssue,http://code.google.com/p/singularity-viewer/issues/entry?template=Feature%20request"/>
 			</menu_item_call>
 		</menu>
-		<menu_item_call bottom="-313" enabled="true" height="19" label="About [APP_NAME]..." left="0"
+		<menu_item_call bottom="-313" enabled="true" height="19" label="About [SHORT_APP_NAME]..." left="0"
 		     mouse_opaque="true" name="About Second Life..." width="166">
 			<on_click function="ShowFloater" userdata="about" />
 		</menu_item_call>
@@ -1019,6 +1034,10 @@
 		<menu_item_check label="Asset Blacklist" mouse_opaque="true" name="Asset Blacklist">
 			<on_click function="ShowFloater" userdata="asset_blacklist"/>
 			<on_check function="FloaterVisible" userdata="asset_blacklist"/>
+		</menu_item_check>
+		<menu_item_check label="Media Filter" name="Media Filter">
+			<on_click function="ShowFloater" userdata="media filter" />
+			<on_check function="FloaterVisible" userdata="media filter" />
 		</menu_item_check>
 		<menu_item_check label="Streaming Audio Display" mouse_opaque="true" name="Streaming Audio Display">
 			<on_click function="ShowFloater" userdata="media ticker"/>

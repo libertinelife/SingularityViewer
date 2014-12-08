@@ -259,7 +259,7 @@ extern void toggle_debug_menus(void*);
 // LLDebugText
 //
 
-extern std::map<LLGLuint, std::list<std::pair<std::string,std::string> > > sTextureMaskMap;
+//extern std::map<LLGLuint, std::list<std::pair<std::string,std::string> > > sTextureMaskMap;
 
 class LLDebugText
 {
@@ -356,7 +356,7 @@ public:
 						LLViewerTexture* imagep = obj->getTEImage(te);
 						if(imagep && imagep != (LLViewerTexture*)LLViewerFetchedTexture::sDefaultImagep.get())
 						{
-							LLGLuint tex = imagep->getTexName();
+							/*LLGLuint tex = imagep->getTexName();
 							std::map<LLGLuint, std::list<std::pair<std::string,std::string> > >::iterator it = sTextureMaskMap.find(tex);
 							if(it != sTextureMaskMap.end())
 							{
@@ -365,7 +365,7 @@ public:
 								{
 									addText(xpos, ypos, llformat(" %s: %s", it2->first.c_str(), it2->second.c_str())); ypos += y_inc;
 								}
-							}
+							}*/
 							static const LLCachedControl<bool> use_rmse_auto_mask("SHUseRMSEAutoMask",false);
 							static const LLCachedControl<F32> auto_mask_max_rmse("SHAutoMaskMaxRMSE",.09f);
 							addText(xpos, ypos, llformat("Mask: %s", imagep->getIsAlphaMask(use_rmse_auto_mask ? auto_mask_max_rmse : -1.f) ? "TRUE":"FALSE")); ypos += y_inc;
@@ -696,32 +696,35 @@ public:
 		static const LLCachedControl<bool> debug_show_render_matrices("DebugShowRenderMatrices");
 		if (debug_show_render_matrices)
 		{
-			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", gGLProjection[12], gGLProjection[13], gGLProjection[14], gGLProjection[15]));
+			F32* m = gGLProjection.getF32ptr();
+
+			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", m[12], m[13], m[14], m[15]));
 			ypos += y_inc;
 
-			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", gGLProjection[8], gGLProjection[9], gGLProjection[10], gGLProjection[11]));
+			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", m[8], m[9], m[10], m[11]));
 			ypos += y_inc;
 
-			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", gGLProjection[4], gGLProjection[5], gGLProjection[6], gGLProjection[7]));
+			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", m[4], m[5], m[6], m[7]));
 			ypos += y_inc;
 
-			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", gGLProjection[0], gGLProjection[1], gGLProjection[2], gGLProjection[3]));
+			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", m[0], m[1], m[2], m[3]));
 			ypos += y_inc;
 
 			addText(xpos, ypos, "Projection Matrix");
 			ypos += y_inc;
 
+			m = gGLModelView.getF32ptr();
 
-			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", gGLModelView[12], gGLModelView[13], gGLModelView[14], gGLModelView[15]));
+			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", m[12], m[13], m[14], m[15]));
 			ypos += y_inc;
 
-			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", gGLModelView[8], gGLModelView[9], gGLModelView[10], gGLModelView[11]));
+			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", m[8], m[9], m[10], m[11]));
 			ypos += y_inc;
 
-			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", gGLModelView[4], gGLModelView[5], gGLModelView[6], gGLModelView[7]));
+			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", m[4], m[5], m[6], m[7]));
 			ypos += y_inc;
 
-			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", gGLModelView[0], gGLModelView[1], gGLModelView[2], gGLModelView[3]));
+			addText(xpos, ypos, llformat("%.4f    .%4f    %.4f    %.4f", m[0], m[1], m[2], m[3]));
 			ypos += y_inc;
 
 			addText(xpos, ypos, "View Matrix");
@@ -1030,7 +1033,7 @@ BOOL LLViewerWindow::handleRightMouseDown(LLWindow *window,  LLCoordGL pos, MASK
 
 	// *HACK: this should be rolled into the composite tool logic, not
 	// hardcoded at the top level.
-	if (CAMERA_MODE_CUSTOMIZE_AVATAR != gAgentCamera.getCameraMode() && LLToolMgr::getInstance()->getCurrentTool() != LLToolPie::getInstance())
+	if (CAMERA_MODE_CUSTOMIZE_AVATAR != gAgentCamera.getCameraMode() && LLToolMgr::getInstance()->getCurrentTool() != LLToolPie::getInstance() && gAgent.isInitialized())
 	{
 		// If the current tool didn't process the click, we should show
 		// the pie menu.  This can be done by passing the event to the pie
@@ -1641,10 +1644,6 @@ LLViewerWindow::LLViewerWindow(
 	resetSnapshotLoc();
 
 	S32 vsync_mode = gSavedSettings.getS32("SHRenderVsyncMode");
-	if(vsync_mode == -1 && !gGLManager.mHasAdaptiveVsync)
-	{
-		vsync_mode = 0; //Disable vsync if adaptive is desired yet isn't supported.
-	}
 
 	// create window
 	mWindow = LLWindowManager::createWindow(this,
@@ -1654,7 +1653,7 @@ LLViewerWindow::LLViewerWindow(
 		vsync_mode,
 		!gNoRender,
 		ignore_pixel_depth,
-		gSavedSettings.getBOOL("RenderUseFBO") ? 0 : gSavedSettings.getU32("RenderFSAASamples")); //don't use window level anti-aliasing if FBOs are enabled
+		LLRenderTarget::sUseFBO ? 0 : gSavedSettings.getU32("RenderFSAASamples")); //don't use window level anti-aliasing if FBOs are enabled
 
 	if (!LLViewerShaderMgr::sInitialized)
 	{ //immediately initialize shaders
@@ -2400,6 +2399,7 @@ void LLViewerWindow::reshape(S32 width, S32 height)
 		// Inform lower views of the change
 		// round up when converting coordinates to make sure there are no gaps at edge of window
 		LLView::sForceReshape = display_scale_changed;
+		if (/*display_scale_changed && */gSavedSettings.getBOOL("LiruResizeRootWithScreen")) // Singu Note: Nasty hack to keep floaters from repositioning on window resize.
 		mRootView->reshape(llceil((F32)width / mDisplayScale.mV[VX]), llceil((F32)height / mDisplayScale.mV[VY]));
 		LLView::sForceReshape = FALSE;
 
@@ -2710,7 +2710,8 @@ BOOL LLViewerWindow::handleKey(KEY key, MASK mask)
 		(MASK_CONTROL & mask) &&
 		('D' == key || 'd' == key))
 	{
-		toggle_debug_menus(NULL);
+		if (gSavedSettings.getBOOL("LiruUseAdvancedMenuShortcut"))
+			toggle_debug_menus(NULL);
 	}
 
 	// handle shift-escape key (reset camera view)
@@ -5485,7 +5486,7 @@ void LLViewerWindow::restartDisplay(BOOL show_progress_bar)
 
 BOOL LLViewerWindow::changeDisplaySettings(BOOL fullscreen, LLCoordScreen size, const S32 vsync_mode, BOOL show_progress_bar)
 {
-	BOOL was_maximized = gSavedSettings.getBOOL("WindowMaximized");
+	BOOL was_maximized = mWindow->getMaximized();
 	mWantFullscreen = fullscreen;
 	mShowFullscreenProgress = show_progress_bar;
 	gSavedSettings.setBOOL("FullScreen", mWantFullscreen);
@@ -5500,7 +5501,7 @@ BOOL LLViewerWindow::changeDisplaySettings(BOOL fullscreen, LLCoordScreen size, 
 		return TRUE;
 	}
 
-	U32 fsaa = gSavedSettings.getU32("RenderFSAASamples");
+	U32 fsaa = LLRenderTarget::sUseFBO ? 0 : gSavedSettings.getU32("RenderFSAASamples"); //don't use window level anti-aliasing if FBOs are enabled
 	U32 old_fsaa = mWindow->getFSAASamples();
 
 	// going from windowed to windowed
@@ -5512,7 +5513,7 @@ BOOL LLViewerWindow::changeDisplaySettings(BOOL fullscreen, LLCoordScreen size, 
 			mWindow->setSize(size);
 		}
 
-		if (fsaa == old_fsaa && vsync_mode == mWindow->getFSAASamples())
+		if (fsaa == old_fsaa && vsync_mode == mWindow->getVsyncMode())
 		{
 			return TRUE;
 		}

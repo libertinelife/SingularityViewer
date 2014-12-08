@@ -14,8 +14,10 @@
 		<menu_item_call label="Ofrecer Teleporte" name="Offer Teleport"/>
 		<menu_item_call label="Teleportar a" name="Teleport To"/>
 		<menu_item_call label="Solicitar Teleporte" name="Request Teleport"/>
+		<menu_item_call label="Compartir" name="Share"/>
 		<menu_item_call label="Rastrear/No Rastrear" name="Track/Untrack"/>
 		<menu_item_call label="Copiar UUID" name="Copy Key"/>
+		<menu_item_call label="Copiar SLURL" name="Copy SLURL"/>
 	</menu>
 	<menu label="Enfoque" name="Focusing">
 		<menu_item_call label="Enfocar" name="Focus"/>
@@ -34,12 +36,14 @@
 		<menu_item_check label="entra/abandona distancia de chat" name="chat range alerts"/>
 		<menu_item_check label="está por debajo del umbral de edad" name="chat range alerts"/>
 		<menu_item_separator/>
+		<menu_item_check label="Incluir distancia en alertas" name="Include distance in alerts"/>
 		<menu_item_check label="Anunciar aún estando cerrado" name="Announce even when closed"/>
 		<menu_item_check label="Anunciar UUIDs al HUD" name="Announce keys to HUD"/>
 		<menu_item_call label="Anunciar UUIDs ahora" name="Announce keys now"/>
 	</menu>
 	<menu label="Moderación" name="Moderation">
 		<menu_item_call label="Ignorar/No Ignorar" name="Mute/Unmute"/>
+		<menu_item_call label="Prohibir en Grupo" name="Ban From Group"/>
 		<menu_item_call label="Reportar Abuso" name="Report Abuse"/>
 		<menu_item_separator/>
 		<menu_item_call label="Congelar" name="Freeze"/>
@@ -52,6 +56,7 @@
 		<menu_item_check label="Posición" name="Position"/>
 		<menu_item_check label="Altitud" name="Altitude"/>
 		<menu_item_check label="Actividad" name="Activity"/>
+		<menu_item_check label="Voz" name="Voice"/>
 		<menu_item_check label="Edad" name="Age"/>
 		<menu_item_check label="Tiempo" name="Time"/>
 		<menu_item_check label="Visor" name="Client"/>

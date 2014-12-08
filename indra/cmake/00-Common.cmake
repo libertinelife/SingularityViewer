@@ -54,6 +54,9 @@ if (WINDOWS)
   # Remove default /Zm1000 flag that cmake inserts
   string (REPLACE "/Zm1000" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
+  # Always use /Zm140
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm140")
+
   # Don't build DLLs.
   set(BUILD_SHARED_LIBS OFF)
 
@@ -269,14 +272,15 @@ endif (DARWIN)
 
 
 if (LINUX OR DARWIN)
-  set(GCC_WARNINGS "-Wall -Wno-sign-compare -Wno-trigraphs")
-  
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     add_definitions(-DLL_GNUC=1)
+    set(UNIX_WARNINGS "-Wall -Wno-sign-compare -Wno-trigraphs")
+    set(UNIX_CXX_WARNINGS "${UNIX_WARNINGS} -Wno-reorder -Wno-non-virtual-dtor -Woverloaded-virtual")
   elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     add_definitions(-DLL_CLANG=1)
-    set(UNIX_WARNINGS "${UNIX_WARNINGS} -Wno-deprecated")
-    set(UNIX_CXX_WARNINGS "${UNIX_CXX_WARNINGS} -Wno-deprecated -Wno-reorder -Wno-tautological-compare")
+    set(UNIX_WARNINGS "-Wall -Wno-sign-compare -Wno-trigraphs -Wno-tautological-compare -Wno-char-subscripts -Wno-gnu -Wno-logical-op-parentheses -Wno-logical-not-parentheses -Wno-non-virtual-dtor -Wno-deprecated")
+    set(UNIX_WARNINGS "${UNIX_WARNINGS} -Woverloaded-virtual -Wno-parentheses-equality -Wno-reorder -Wno-unused-function -Wno-unused-value -Wno-unused-variable -Wno-unused-private-field -Wno-parentheses")
+    set(UNIX_CXX_WARNINGS "${UNIX_WARNINGS}")
   elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     add_definitions(-DLL_ICC=1)
   endif ()

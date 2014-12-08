@@ -21,29 +21,34 @@
 #include "llsingleton.h"
 #include "llpermissions.h"	// ExportPolicy
 
-template<typename Type, typename Signal = boost::signals2::signal<void()> >
+template<typename Type, typename Signal = boost::signals2::signal<void(const Type&)> >
 class SignaledType
 {
 public:
-	SignaledType() : mValue() {}
-	SignaledType(Type b) : mValue(b) {}
+	SignaledType() : mValue(), mDefaultValue() {}
+	SignaledType(Type b) : mValue(b), mDefaultValue(b) {}
 
-	boost::signals2::connection connect(const typename Signal::slot_type& slot) { return mSignal.connect(slot); }
+	typedef typename Signal::slot_type slot_t;
+	boost::signals2::connection connect(const slot_t& slot) { return mSignal.connect(slot); }
 
 	SignaledType& operator =(Type val)
 	{
 		if (val != mValue)
 		{
 			mValue = val;
-			mSignal();
+			mSignal(val);
 		}
 		return *this;
 	}
 	operator Type() const { return mValue; }
+	const Type& ref() const { return mValue; }
+	void reset() { *this = mDefaultValue; }
+	const Type& getDefault() const { return mDefaultValue; }
 
 private:
 	Signal mSignal;
 	Type mValue;
+	const Type mDefaultValue;
 };
 
 class LFSimFeatureHandler : public LLSingleton<LFSimFeatureHandler>
@@ -57,16 +62,19 @@ public:
 	void setSupportedFeatures();
 
 	// Connection setters
-	boost::signals2::connection setSupportsExportCallback(const boost::signals2::signal<void()>::slot_type& slot);
-	boost::signals2::connection setSearchURLCallback(const boost::signals2::signal<void()>::slot_type& slot);
-	boost::signals2::connection setSayRangeCallback(const boost::signals2::signal<void()>::slot_type& slot);
-	boost::signals2::connection setShoutRangeCallback(const boost::signals2::signal<void()>::slot_type& slot);
-	boost::signals2::connection setWhisperRangeCallback(const boost::signals2::signal<void()>::slot_type& slot);
+	boost::signals2::connection setSupportsExportCallback(const SignaledType<bool>::slot_t& slot) { return mSupportsExport.connect(slot); }
+	boost::signals2::connection setDestinationGuideURLCallback(const SignaledType<std::string>::slot_t& slot) { return mDestinationGuideURL.connect(slot); }
+	boost::signals2::connection setSearchURLCallback(const SignaledType<std::string>::slot_t& slot) { return mSearchURL.connect(slot); }
+	boost::signals2::connection setSayRangeCallback(const SignaledType<U32>::slot_t& slot) { return mSayRange.connect(slot); }
+	boost::signals2::connection setShoutRangeCallback(const SignaledType<U32>::slot_t& slot) { return mShoutRange.connect(slot); }
+	boost::signals2::connection setWhisperRangeCallback(const SignaledType<U32>::slot_t& slot) { return mWhisperRange.connect(slot); }
 
 	// Accessors
 	bool simSupportsExport() const { return mSupportsExport; }
+	std::string destinationGuideURL() const { return mDestinationGuideURL; }
 	std::string mapServerURL() const { return mMapServerURL; }
 	std::string searchURL() const { return mSearchURL; }
+	const std::string& gridName() const { return mGridName.ref(); }
 	U32 sayRange() const { return mSayRange; }
 	U32 shoutRange() const { return mShoutRange; }
 	U32 whisperRange() const { return mWhisperRange; }
@@ -75,8 +83,10 @@ public:
 private:
 	// SignaledTypes
 	SignaledType<bool> mSupportsExport;
+	SignaledType<std::string> mDestinationGuideURL;
 	std::string mMapServerURL;
 	SignaledType<std::string> mSearchURL;
+	SignaledType<std::string> mGridName;
 	SignaledType<U32> mSayRange;
 	SignaledType<U32> mShoutRange;
 	SignaledType<U32> mWhisperRange;

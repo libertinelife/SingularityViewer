@@ -41,7 +41,6 @@
 #   include "GL/glx.h"
 #   define  GL_GLEXT_PROTOTYPES 1
 #   include "GL/glext.h"
-#   include "GL/glu.h"
 #   include "GL/glx.h"
 #   define  GLX_GLXEXT_PROTOTYPES 1
 #   include "GL/glxext.h"
@@ -152,6 +151,7 @@ extern PFNGLUNIFORM3IVARBPROC glUniform3ivARB;
 extern PFNGLUNIFORM4IVARBPROC glUniform4ivARB;
 extern PFNGLUNIFORMMATRIX2FVARBPROC glUniformMatrix2fvARB;
 extern PFNGLUNIFORMMATRIX3FVARBPROC glUniformMatrix3fvARB;
+extern PFNGLUNIFORMMATRIX3X4FVPROC glUniformMatrix3x4fv;
 extern PFNGLUNIFORMMATRIX4FVARBPROC glUniformMatrix4fvARB;
 extern PFNGLGETOBJECTPARAMETERFVARBPROC glGetObjectParameterfvARB;
 extern PFNGLGETOBJECTPARAMETERIVARBPROC glGetObjectParameterivARB;
@@ -265,7 +265,6 @@ extern PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
 #define GL_GLEXT_PROTOTYPES 1
 #include "GL/gl.h"
 #include "GL/glext.h"
-#include "GL/glu.h"
 
 // The __APPLE__ kludge is to make glh_extensions.h not symbol-clash horribly
 # define __APPLE__
@@ -281,7 +280,6 @@ extern PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
 // quotes so we get libraries/.../GL/ version
 #include "GL/gl.h"
 #include "GL/glext.h"
-#include "GL/glu.h"
 
 
 #if LL_LINUX && !LL_MESA_HEADLESS
@@ -415,6 +413,7 @@ extern PFNGLUNIFORM3IVARBPROC glUniform3ivARB;
 extern PFNGLUNIFORM4IVARBPROC glUniform4ivARB;
 extern PFNGLUNIFORMMATRIX2FVARBPROC glUniformMatrix2fvARB;
 extern PFNGLUNIFORMMATRIX3FVARBPROC glUniformMatrix3fvARB;
+extern PFNGLUNIFORMMATRIX3X4FVPROC glUniformMatrix3x4fv;
 extern PFNGLUNIFORMMATRIX4FVARBPROC glUniformMatrix4fvARB;
 extern PFNGLGETOBJECTPARAMETERFVARBPROC glGetObjectParameterfvARB;
 extern PFNGLGETOBJECTPARAMETERIVARBPROC glGetObjectParameterivARB;
@@ -549,7 +548,6 @@ extern PFNGLBINDBUFFERRANGEPROC glBindBufferRange;
 
 //----------------------------------------------------------------------------
 #include <GL/gl.h>
-#include <GL/glu.h>
 
 // quotes so we get libraries/.../GL/ version
 #include "GL/glext.h"
@@ -656,6 +654,7 @@ extern PFNGLUNIFORM3IVARBPROC glUniform3ivARB;
 extern PFNGLUNIFORM4IVARBPROC glUniform4ivARB;
 extern PFNGLUNIFORMMATRIX2FVARBPROC glUniformMatrix2fvARB;
 extern PFNGLUNIFORMMATRIX3FVARBPROC glUniformMatrix3fvARB;
+extern PFNGLUNIFORMMATRIX3X4FVPROC glUniformMatrix3x4fv;
 extern PFNGLUNIFORMMATRIX4FVARBPROC glUniformMatrix4fvARB;
 extern PFNGLGETOBJECTPARAMETERFVARBPROC glGetObjectParameterfvARB;
 extern PFNGLGETOBJECTPARAMETERIVARBPROC glGetObjectParameterivARB;
@@ -786,7 +785,6 @@ extern PFNGLGETDEBUGMESSAGELOGARBPROC glGetDebugMessageLogARB;
 // LL_DARWIN
 
 #include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
 
 #define GL_EXT_separate_specular_color 1
 #include <OpenGL/glext.h>

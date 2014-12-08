@@ -57,7 +57,7 @@ WindLightUseAtmosShaders	1	1
 WLSkyDetail					1	128
 Disregard128DefaultDrawDistance	1	1
 Disregard96DefaultDrawDistance	1	1
-RenderTextureMemoryMultiple		1	0.5
+RenderTextureMemoryMultiple		1	1.0
 RenderShaderLightingMaxLevel	1	3
 RenderDeferred				1	1
 RenderDeferredSSAO			1	1
@@ -296,6 +296,11 @@ RenderObjectBump			0	0
 list OpenGLPre15
 RenderVBOEnable				1	0
 
+list OpenGLPre21
+RenderAvatarVP				0	0
+RenderAvatarCloth			0	0
+RenderDeferred				0	0
+
 list TexUnit8orLess
 RenderDeferredSSAO			0	0
 
@@ -390,7 +395,7 @@ list ATI_Mobility_Radeon_9600
 Disregard96DefaultDrawDistance	1	0
 
 list NVIDIA_GeForce_8600
-RenderTextureMemoryMultiple			1	0.375	
+RenderTextureMemoryMultiple			1	1
 RenderUseImpostors				0	0
 UseOcclusion				0	0
 
@@ -521,3 +526,7 @@ Disregard128DefaultDrawDistance	1	0
 list NVIDIA_GeForce_Go_7400
 Disregard128DefaultDrawDistance	1	0
 
+list VertexUniformsLT1024
+RenderAvatarVP					0	0
+RenderAvatarCloth				0	0
+RenderDeferred					0	0

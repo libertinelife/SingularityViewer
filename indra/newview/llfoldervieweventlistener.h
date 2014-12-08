@@ -57,7 +57,7 @@ public:
 	virtual PermissionMask getPermissionMask() const = 0;
 	virtual LLFolderType::EType getPreferredType() const = 0;
 	virtual LLPointer<LLUIImage> getIcon() const = 0;
-	virtual LLPointer<LLUIImage> getOpenIcon() const { return getIcon(); }
+	virtual LLPointer<LLUIImage> getIconOpen() const { return getIcon(); }
 	virtual LLFontGL::StyleFlags getLabelStyle() const = 0;
 	virtual std::string getLabelSuffix() const = 0;
 	virtual void openItem( void ) = 0;
@@ -82,7 +82,7 @@ public:
 	virtual void pasteLinkFromClipboard() = 0;
 	virtual void buildContextMenu(LLMenuGL& menu, U32 flags) = 0;
 	virtual BOOL isUpToDate() const = 0;
-	virtual BOOL hasChildren() const = 0;
+	virtual bool hasChildren() const = 0;
 	virtual LLInventoryType::EType getInventoryType() const = 0;
 	virtual void performAction(LLInventoryModel* model, std::string action) = 0;
 	virtual LLWearableType::EType getWearableType() const = 0;

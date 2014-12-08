@@ -28,6 +28,7 @@
 #define LL_LLKEYBOARD_H
 
 #include <map>
+#include <boost/function.hpp>
 
 #include "string_table.h"
 #include "lltimer.h"
@@ -40,7 +41,7 @@ enum EKeystate
 	KEYSTATE_UP 
 };
 
-typedef void (*LLKeyFunc)(EKeystate keystate);
+typedef boost::function<void(EKeystate keystate)> LLKeyFunc;
 
 enum EKeyboardInsertMode
 {
@@ -113,6 +114,12 @@ public:
 	F32				getKeyElapsedTime( KEY key );  // Returns time in seconds since key was pressed.
 	S32				getKeyElapsedFrameCount( KEY key );  // Returns time in frames since key was pressed.
 
+	void setControllerKey(KEY key, bool level)
+	{
+		mControllerKeys[key] = mKeyLevel[key] = level;
+		(level ? mKeyDown[key] : mKeyUp[key]) = true;
+	}
+
 protected:
 	void 			addKeyName(KEY key, const std::string& name);
 
@@ -127,6 +134,7 @@ protected:
 	BOOL			mKeyRepeated[KEY_COUNT];	// Key was repeated
 	BOOL			mKeyUp[KEY_COUNT];			// Up edge
 	BOOL			mKeyDown[KEY_COUNT];		// Down edge
+	BOOL			mControllerKeys[KEY_COUNT];	// Keys held in controller
 	KEY				mCurTranslatedKey;
 	KEY				mCurScanKey;		// Used during the scanKeyboard()
 

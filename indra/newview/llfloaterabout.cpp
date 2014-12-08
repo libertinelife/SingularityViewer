@@ -268,7 +268,7 @@ LLFloaterAbout::LLFloaterAbout()
 	support.append( (const char*) glGetString(GL_VERSION) );
 // [RLVa:KB] - Checked: 2010-04-18 (RLVa-1.2.0)
 	support.append("\n");
-	support.append("RLV Version: " + (RlvActions::isRlvEnabled()) ? RlvStrings::getVersionAbout() : "(disabled)");
+	support.append("RLV Version: " + (RlvActions::isRlvEnabled() ? RlvStrings::getVersionAbout() : "(disabled)"));
 // [/RLVa:KB]
 	support.append("\n\n");
 
@@ -298,7 +298,15 @@ LLFloaterAbout::LLFloaterAbout()
 
 	// TODO: Implement media plugin version query
 
-	support.append("Qt Webkit Version: 4.7.1 (version number hard-coded)");
+	support.append("Qt Webkit Version: ");
+	support.append(
+#if LL_LINUX && defined(__x86_64__)
+	"4.8.6"
+#else
+	"4.7.1"
+#endif
+	);
+	support.append(" (version number hard-coded)");
 	support.append("\n");
 
 	if (gPacketsIn > 0)

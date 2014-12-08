@@ -69,7 +69,6 @@ BOOL LLFace::sSafeRenderSelect = TRUE; // FALSE
 
 #define DOTVEC(a,b) (a.mV[0]*b.mV[0] + a.mV[1]*b.mV[1] + a.mV[2]*b.mV[2])
 
-
 /*
 For each vertex, given:
 	B - binormal
@@ -166,6 +165,8 @@ void LLFace::init(LLDrawable* drawablep, LLViewerObject* objp)
 	mBoundingSphereRadius = 0.0f ;
 
 	mHasMedia = FALSE ;
+
+	mShinyInAlpha = false;
 }
 
 void LLFace::destroy()
@@ -205,7 +206,7 @@ void LLFace::destroy()
 
 	if (mTextureMatrix)
 	{
-		delete mTextureMatrix;
+		ll_aligned_free_16(mTextureMatrix);
 		mTextureMatrix = NULL;
 
 		if (mDrawablep.notNull())
@@ -396,6 +397,7 @@ void LLFace::setSize(S32 num_vertices, const S32 num_indices, bool align)
 		//allocate vertices in blocks of 4 for alignment
 		num_vertices = (num_vertices + 0x3) & ~0x3;
 	}
+
 	if (mGeomCount != num_vertices ||
 		mIndicesCount != num_indices)
 	{
@@ -452,7 +454,7 @@ U16 LLFace::getGeometryAvatar(
 						LLStrider<LLVector3> &normals,
 						LLStrider<LLVector2> &tex_coords,
 						LLStrider<F32>		 &vertex_weights,
-						LLStrider<LLVector4> &clothing_weights)
+						LLStrider<LLVector4a> &clothing_weights)
 {
 	if (mVertexBuffer.notNull())
 	{
@@ -491,7 +493,11 @@ void LLFace::updateCenterAgent()
 {
 	if (mDrawablep->isActive())
 	{
-		mCenterAgent = mCenterLocal * getRenderMatrix();
+		LLVector4a local_pos;
+		local_pos.load3(mCenterLocal.mV);
+
+		getRenderMatrix().affineTransform(local_pos,local_pos);
+		mCenterAgent.set(local_pos.getF32ptr());
 	}
 	else
 	{
@@ -519,15 +525,21 @@ void LLFace::renderSelected(LLViewerTexture *imagep, const LLColor4& color)
 		gGL.getTexUnit(0)->bind(imagep);
 	
 		gGL.pushMatrix();
+
+		const LLMatrix4a* model_matrix = NULL;
 		if (mDrawablep->isActive())
 		{
-			gGL.multMatrix((GLfloat*)mDrawablep->getRenderMatrix().mMatrix);
+			model_matrix = &(mDrawablep->getRenderMatrix());
 		}
 		else
 		{
-			gGL.multMatrix((GLfloat*)mDrawablep->getRegion()->mRenderMatrix.mMatrix);
+			model_matrix = &mDrawablep->getRegion()->mRenderMatrix;
 		}
-	
+		if(model_matrix && !model_matrix->isIdentity())
+		{
+			gGL.multMatrix(*model_matrix);
+		}
+
 		if (mDrawablep->isState(LLDrawable::RIGGED))
 		{
 			LLVOVolume* volume = mDrawablep->getVOVolume();
@@ -538,7 +550,7 @@ void LLFace::renderSelected(LLViewerTexture *imagep, const LLColor4& color)
 				{
 					LLGLEnable offset(GL_POLYGON_OFFSET_FILL);
 					glPolygonOffset(-1.f, -1.f);
-					gGL.multMatrix((F32*) volume->getRelativeXform().mMatrix);
+					gGL.multMatrix(volume->getRelativeXform());
 					const LLVolumeFace& vol_face = rigged->getVolumeFace(getTEOffset());
 
 					// Singu Note: Implementation changed to utilize a VBO, avoiding fixed functions unless required
@@ -806,14 +818,14 @@ bool less_than_max_mag(const LLVector4a& vec)
 }
 
 BOOL LLFace::genVolumeBBoxes(const LLVolume &volume, S32 f,
-								const LLMatrix4& mat_vert_in, BOOL global_volume)
+								const LLMatrix4a& mat_vert_in, BOOL global_volume)
 {
 	//get bounding box
 	if (mDrawablep->isState(LLDrawable::REBUILD_VOLUME | LLDrawable::REBUILD_POSITION | LLDrawable::REBUILD_RIGGED))
 	{
 		//VECTORIZE THIS
-		LLMatrix4a mat_vert;
-		mat_vert.loadu(mat_vert_in);
+		const LLMatrix4a& mat_vert = mat_vert_in;
+		//mat_vert.loadu(mat_vert_in);
 
 		LLVector4a min,max;
 	
@@ -954,9 +966,9 @@ LLVector2 LLFace::surfaceToTexture(LLVector2 surface_coord, const LLVector4a& po
 
 	if (mTextureMatrix)	// if we have a texture matrix, use it
 	{
-		LLVector3 tc3(tc);
-		tc3 = tc3 * *mTextureMatrix;
-		tc = LLVector2(tc3);
+		LLVector4a tc4(tc.mV[VX],tc.mV[VY],0.f);
+		mTextureMatrix->affineTransform(tc4,tc4);
+		tc.set(tc4.getF32ptr());
 	}
 	
 	else // otherwise use the texture entry parameters
@@ -973,17 +985,17 @@ LLVector2 LLFace::surfaceToTexture(LLVector2 surface_coord, const LLVector4a& po
 // by planarProjection(). This is needed to match planar texgen parameters.
 void LLFace::getPlanarProjectedParams(LLQuaternion* face_rot, LLVector3* face_pos, F32* scale) const
 {
-	const LLMatrix4& vol_mat = getWorldMatrix();
+	const LLMatrix4a& vol_mat = getWorldMatrix();
 	const LLVolumeFace& vf = getViewerObject()->getVolume()->getVolumeFace(mTEOffset);
-	const LLVector4a& normal4a = vf.mNormals[0];
+	const LLVector4a& normal = vf.mNormals[0];
 	const LLVector4a& tangent = vf.mTangents[0];
 
-	LLVector4a binormal4a;
-	binormal4a.setCross3(normal4a, tangent);
-	binormal4a.mul(tangent.getF32ptr()[3]);
+	LLVector4a binormal;
+	binormal.setCross3(normal, tangent);
+	binormal.mul(tangent.getF32ptr()[3]);
 
 	LLVector2 projected_binormal;
-	planarProjection(projected_binormal, normal4a, *vf.mCenter, binormal4a);
+	planarProjection(projected_binormal, normal, *vf.mCenter, binormal);
 	projected_binormal -= LLVector2(0.5f, 0.5f); // this normally happens in xform()
 	*scale = projected_binormal.length();
 	// rotate binormal to match what planarProjection() thinks it is,
@@ -992,13 +1004,16 @@ void LLFace::getPlanarProjectedParams(LLQuaternion* face_rot, LLVector3* face_po
 	F32 ang = acos(projected_binormal.mV[VY]);
 	ang = (projected_binormal.mV[VX] < 0.f) ? -ang : ang;
 
+	gGL.genRot(RAD_TO_DEG * ang, normal).rotate(binormal, binormal);
+
+	LLVector4a x_axis;
+	x_axis.setCross3(binormal, normal);
+
 	//VECTORIZE THIS
-	LLVector3 binormal(binormal4a.getF32ptr());
-	LLVector3 normal(normal4a.getF32ptr());
-	binormal.rotVec(ang, normal);
-	LLQuaternion local_rot( binormal % normal, binormal, normal );
-	*face_rot = local_rot * vol_mat.quaternion();
-	*face_pos = vol_mat.getTranslation();
+	LLQuaternion local_rot(LLVector3(x_axis.getF32ptr()), LLVector3(binormal.getF32ptr()), LLVector3(normal.getF32ptr()));
+	*face_rot = local_rot * LLMatrix4(vol_mat.getF32ptr()).quaternion();
+
+	face_pos->set(vol_mat.getRow<VW>().getF32ptr());
 }
 
 // Returns the necessary texture transform to align this face's TE to align_to's TE
@@ -1081,7 +1096,7 @@ bool LLFace::canRenderAsMask()
 	static const LLCachedControl<F32> auto_mask_max_rmse("SHAutoMaskMaxRMSE",.09f);
 	if ((te->getColor().mV[3] == 1.0f) && // can't treat as mask if we have face alpha
 		(te->getGlow() == 0.f) && // glowing masks are hard to implement - don't mask
-		(!getViewerObject()->isAttachment() && getTexture()->getIsAlphaMask(use_rmse_auto_mask ? auto_mask_max_rmse : -1.f))) // texture actually qualifies for masking (lazily recalculated but expensive)
+		(getTexture()->getIsAlphaMask((!getViewerObject()->isAttachment() && use_rmse_auto_mask) ? auto_mask_max_rmse : -1.f))) // texture actually qualifies for masking (lazily recalculated but expensive)
 	{
 		if (LLPipeline::sRenderDeferred)
 		{
@@ -1143,11 +1158,11 @@ void LLFace::cacheFaceInVRAM(const LLVolumeFace& vf)
 
 	if (vf.mWeights)
 	{
-		LLStrider<LLVector4> f_wght;
+		LLStrider<LLVector4a> f_wght;
 		buff->getWeight4Strider(f_wght);
 		for (U32 i = 0; i < (U32)vf.mNumVertices; ++i)
 		{
-			(*f_wght++).set(vf.mWeights[i].getF32ptr());
+			(*f_wght++) = vf.mWeights[i];
 		}
 	}
 
@@ -1200,7 +1215,7 @@ static LLFastTimer::DeclareTimer FTM_FACE_TEX_QUICK_PLANAR("Quick Planar");
 
 BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 							   const S32 &f,
-								const LLMatrix4& mat_vert_in, const LLMatrix3& mat_norm_in,
+								const LLMatrix4a& mat_vert_in, const LLMatrix4a& mat_norm_in,
 								const U16 &index_offset,
 								bool force_rebuild)
 {
@@ -1253,7 +1268,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 	LLStrider<LLColor4U> colors;
 	LLStrider<LLVector3> tangent;
 	LLStrider<U16> indicesp;
-	LLStrider<LLVector4> wght;
+	LLStrider<LLVector4a> wght;
 
 	BOOL full_rebuild = force_rebuild || mDrawablep->isState(LLDrawable::REBUILD_VOLUME);
 	
@@ -1298,53 +1313,9 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 	if (rebuild_color)	// FALSE if tep == NULL
 	{ //decide if shiny goes in alpha channel of color
 
-		static const LLCachedControl<bool> alt_batching("SHAltBatching",true);
-		if (tep && 
-			((!alt_batching && getPoolType() != LLDrawPool::POOL_ALPHA) ||
-			(alt_batching && getPoolType() != LLDrawPool::POOL_ALPHA &&
-			getPoolType() != LLDrawPool::POOL_ALPHA_MASK &&
-			getPoolType() != LLDrawPool::POOL_FULLBRIGHT_ALPHA_MASK &&					// <--- alpha channel MUST contain transparency, not shiny
-			(getPoolType() != LLDrawPool::POOL_SIMPLE || LLPipeline::sRenderDeferred))))	// Impostor pass for simple uses alpha masking. Need to be opaque.
+		if(mShinyInAlpha)
 		{
-			LLMaterial* mat = tep->getMaterialParams().get();
-						
-			bool shiny_in_alpha = alt_batching ? true : false;
-			
-			if(alt_batching)
-			{
-			if (LLPipeline::sRenderDeferred)
-			{ //store shiny in alpha if we don't have a specular map
-				if  (getPoolType() == LLDrawPool::POOL_MATERIALS && mat->getSpecularID().notNull())
-				{
-					shiny_in_alpha = false;
-				}
-			}
-			}
-			else
-			{
-			if (LLPipeline::sRenderDeferred)
-			{
-				if  (!mat || mat->getSpecularID().isNull())
-				{
-					shiny_in_alpha = true;
-				}
-			}
-			else
-			{
-				if (!mat || mat->getDiffuseAlphaMode() != LLMaterial::DIFFUSE_ALPHA_MODE_MASK)
-				{
-					shiny_in_alpha = true;
-				}
-			}
-			}
-
-			if(getPoolType() == LLDrawPool::POOL_FULLBRIGHT)
-			{
-				color.mV[3] = 1.f; //Simple fullbright reads alpha for fog contrib, not shiny/transparency, so since opaque, force to 1.
-			}
-			else if (shiny_in_alpha)
-			{
-				GLfloat alpha[4] =
+			GLfloat alpha[4] =
 				{
 					0.00f,
 					0.25f,
@@ -1352,9 +1323,8 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 					0.75f
 				};
 			
-				llassert(tep->getShiny() <= 3);
-				color.mV[3] = U8 (alpha[tep->getShiny()] * 255);
-			}
+			llassert(tep->getShiny() <= 3);
+			color.mV[3] = U8 (alpha[tep->getShiny()] * 255);
 		}
 	}
 
@@ -1392,8 +1362,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 		}
 	}
 	
-	LLMatrix4a mat_normal;
-	mat_normal.loadu(mat_norm_in);
+	const LLMatrix4a& mat_normal = mat_norm_in;
 	
 	F32 r = 0, os = 0, ot = 0, ms = 0, mt = 0, cos_ang = 0, sin_ang = 0;
 	bool do_xform = false;
@@ -1452,7 +1421,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 		LLGLSLShader* cur_shader = LLGLSLShader::sCurBoundShaderPtr;
 		
 		gGL.pushMatrix();
-		gGL.loadMatrix((GLfloat*) mat_vert_in.mMatrix);
+		gGL.loadMatrix(mat_vert_in);
 
 		if (rebuild_pos)
 		{
@@ -1567,7 +1536,6 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 		}
 
 		glBindBufferARB(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
-
 		gGL.popMatrix();
 
 		if (cur_shader)
@@ -1594,7 +1562,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 			LLQuaternion bump_quat;
 			if (mDrawablep->isActive())
 			{
-				bump_quat = LLQuaternion(mDrawablep->getRenderMatrix());
+				bump_quat = LLQuaternion(LLMatrix4(mDrawablep->getRenderMatrix().getF32ptr()));
 			}
 		
 			if (bump_code)
@@ -1756,16 +1724,12 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 					else
 					{ //do tex mat, no texgen, no atlas, no bump
 						for (S32 i = 0; i < num_vertices; i++)
-						{	
-							LLVector2 tc(vf.mTexCoords[i]);
+						{
 							//LLVector4a& norm = vf.mNormals[i];
 							//LLVector4a& center = *(vf.mCenter);
-
-							LLVector3 tmp(tc.mV[0], tc.mV[1], 0.f);
-							tmp = tmp * *mTextureMatrix;
-							tc.mV[0] = tmp.mV[0];
-							tc.mV[1] = tmp.mV[1];
-							*tex_coords0++ = tc;	
+							LLVector4a tc(vf.mTexCoords[i].mV[VX],vf.mTexCoords[i].mV[VY],0.f);
+							mTextureMatrix->affineTransform(tc,tc);
+							(tex_coords0++)->set(tc.getF32ptr());
 						}
 					}
 				}
@@ -1783,12 +1747,9 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 							vec.mul(scalea);
 							planarProjection(tc, norm, center, vec);
 						
-							LLVector3 tmp(tc.mV[0], tc.mV[1], 0.f);
-							tmp = tmp * *mTextureMatrix;
-							tc.mV[0] = tmp.mV[0];
-							tc.mV[1] = tmp.mV[1];
-				
-							*tex_coords0++ = tc;	
+							LLVector4a tmp(tc.mV[VX],tc.mV[VY],0.f);
+							mTextureMatrix->affineTransform(tmp,tmp);
+							(tex_coords0++)->set(tmp.getF32ptr());
 						}
 					}
 					else
@@ -1898,10 +1859,9 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 
 						if (tex_mode && mTextureMatrix)
 						{
-							LLVector3 tmp(tc.mV[0], tc.mV[1], 0.f);
-							tmp = tmp * *mTextureMatrix;
-							tc.mV[0] = tmp.mV[0];
-							tc.mV[1] = tmp.mV[1];
+							LLVector4a tmp(tc.mV[VX],tc.mV[VY],0.f);
+							mTextureMatrix->affineTransform(tmp,tmp);
+							tc.set(tmp.getF32ptr());
 						}
 						else
 						{
@@ -1979,8 +1939,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 		
 			mVertexBuffer->getVertexStrider(vert, mGeomIndex, mGeomCount, map_range);
 			
-			LLMatrix4a mat_vert;
-			mat_vert.loadu(mat_vert_in);
+			const LLMatrix4a& mat_vert = mat_vert_in;
 
 			F32* dst = (F32*) vert.get();
 			F32* end_f32 = dst+mGeomCount*4;
@@ -2097,10 +2056,6 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 			
 			mVObjp->getVolume()->genTangents(f);
 			
-			LLVector4Logical mask;
-			mask.clear();
-			mask.setElement<3>();
-
 			LLVector4a* src = vf.mTangents;
 			LLVector4a* end = vf.mTangents+num_vertices;
 
@@ -2109,7 +2064,7 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 				LLVector4a tangent_out;
 				mat_normal.rotate(*src, tangent_out);
 				tangent_out.normalize3fast();
-				tangent_out.setSelectWithMask(mask, *src, tangent_out);
+				tangent_out.copyComponent<3>(*src);
 				tangent_out.store4a(tangents);
 				
 				src++;
@@ -2126,8 +2081,10 @@ BOOL LLFace::getGeometryVolume(const LLVolume& volume,
 		{
 			LLFastTimer t(FTM_FACE_GEOM_WEIGHTS);
 			mVertexBuffer->getWeight4Strider(wght, mGeomIndex, mGeomCount, map_range);
-			F32* weights = (F32*) wght.get();
-			LLVector4a::memcpyNonAliased16(weights, (F32*) vf.mWeights, num_vertices*4*sizeof(F32));
+			for(S32 i=0;i<num_vertices;++i)
+			{
+				*(wght++) = vf.mWeights[i];
+			}
 			if (map_range)
 			{
 				mVertexBuffer->flush();
@@ -2425,8 +2382,6 @@ F32 LLFace::calcImportanceToCamera(F32 cos_angle_to_view_dir, F32 dist)
 			return 0.f ;
 		}
 		
-		//F32 camera_relative_speed = camera_moving_speed * (lookAt * LLViewerCamera::getInstance()->getVelocityDir()) ;
-		
 		S32 i = 0 ;
 		for(i = 0; i < FACE_IMPORTANCE_LEVEL && dist > FACE_IMPORTANCE_TO_CAMERA_OVER_DISTANCE[i][0]; ++i);
 		i = llmin(i, FACE_IMPORTANCE_LEVEL - 1) ;
@@ -2467,16 +2422,7 @@ BOOL LLFace::verify(const U32* indices_array) const
 	BOOL ok = TRUE;
 
 	if( mVertexBuffer.isNull() )
-	{
-		if( mGeomCount )
-		{
-			// This happens before teleports as faces are torn down.
-			// Stop the crash in DEV-31893 with a null pointer check,
-			// but present this info.
-			// To clean up the log, the geometry could be cleared, or the
-			// face could otherwise be marked for no ::verify.
-			//AIFIXME: llinfos << "Face with no vertex buffer and " << mGeomCount << " mGeomCount" << llendl;
-		}
+	{ //no vertex buffer, face is implicitly valid
 		return TRUE;
 	}
 	
@@ -2582,7 +2528,7 @@ S32 LLFace::pushVertices(const U16* index_array) const
 	return mIndicesCount;
 }
 
-const LLMatrix4& LLFace::getRenderMatrix() const
+const LLMatrix4a& LLFace::getRenderMatrix() const
 {
 	return mDrawablep->getRenderMatrix();
 }
@@ -2598,7 +2544,7 @@ S32 LLFace::renderElements(const U16 *index_array) const
 	else
 	{
 		gGL.pushMatrix();
-		gGL.multMatrix((float*)getRenderMatrix().mMatrix);
+		gGL.multMatrix(getRenderMatrix());
 		ret = pushVertices(index_array);
 		gGL.popMatrix();
 	}
@@ -2658,7 +2604,10 @@ LLVector3 LLFace::getPositionAgent() const
 	}
 	else
 	{
-		return mCenterLocal * getRenderMatrix();
+		LLVector4a center_local;
+		center_local.load3(mCenterLocal.mV);
+		getRenderMatrix().affineTransform(center_local,center_local);
+		return LLVector3(center_local.getF32ptr());
 	}
 }
 

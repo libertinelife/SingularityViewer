@@ -261,8 +261,12 @@ void RlvUIEnabler::onToggleShowLoc()
 {
 	bool fEnable = !gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC);
 
-	// RELEASE-RLVa: [SL-2.0.1] Check that the code below still evaluates to *only* LLNavigationBar::instance().mCmbLocation->refresh()
-	//LLAppViewer::instance()->handleLoginComplete();
+	/* Singu TODO: LLNavigationBar
+	if (LLNavigationBar::instanceExists())
+		LLNavigationBar::instance().refreshLocationCtrl();
+	if (LLPanelTopInfoBar::instanceExists())
+		LLPanelTopInfoBar::instance().update();
+	*/
 
 	if (!fEnable)
 	{
@@ -484,12 +488,12 @@ bool RlvUIEnabler::canViewParcelProperties()
 			const LLUUID& idOwner = pParcel->getOwnerID();
 			if ( (idOwner != gAgent.getID()) )
 			{
-				S32 count = gAgent.mGroups.count();
+				S32 count = gAgent.mGroups.size();
 				for (S32 i = 0; i < count; ++i)
 				{
-					if (gAgent.mGroups.get(i).mID == idOwner)
+					if (gAgent.mGroups[i].mID == idOwner)
 					{
-						fShow = ((gAgent.mGroups.get(i).mPowers & GP_LAND_RETURN) > 0);
+						fShow = ((gAgent.mGroups[i].mPowers & GP_LAND_RETURN) > 0);
 						break;
 					}
 				}

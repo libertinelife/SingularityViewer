@@ -125,7 +125,9 @@ bool LLWindowSDL::ll_try_gtk_init(void)
 	if (!tried_gtk_init)
 	{
 		tried_gtk_init = TRUE;
+#if !GLIB_CHECK_VERSION(2, 32, 0)
 		if (!g_thread_supported ()) g_thread_init (NULL);
+#endif
 		maybe_lock_display();
 		gtk_is_good = gtk_init_check(NULL, NULL);
 		maybe_unlock_display();
@@ -235,8 +237,6 @@ LLWindowSDL::LLWindowSDL(LLWindowCallbacks* callbacks,
 	// Create the GL context and set it up for windowed or fullscreen, as appropriate.
 	if(createContext(x, y, width, height, 32, fullscreen, vsync_mode))
 	{
-		gGLManager.initGL();
-
 		//start with arrow cursor
 		initCursors();
 		setCursor( UI_CURSOR_ARROW );
@@ -721,9 +721,11 @@ BOOL LLWindowSDL::createContext(int x, int y, int width, int height, int bits, B
 	}
 #endif // LL_X11
 
+	gGLManager.initGL();
+
 #if SDL_VERSION_ATLEAST(1,3,0)
 	// Disable vertical sync for swap
-	if (vsync_mode == 0)
+	if (vsync_mode == 0 || (!gGLManager.mHasAdaptiveVsync && vsync_mode == -1))
 	{
 		LL_DEBUGS("Window") << "Disabling vertical sync" << LL_ENDL;
 		SDL_GL_SetSwapInterval(0);
@@ -744,19 +746,10 @@ BOOL LLWindowSDL::createContext(int x, int y, int width, int height, int bits, B
 	}
 #else // SDL_VERSION_ATLEAST(1,3,0)
 #ifdef SDL_GL_SWAP_CONTROL
-	if (vsync_mode == 0)
+	if (vsync_mode <= 0)
 	{
 		LL_DEBUGS("Window") << "Disabling vertical sync" << LL_ENDL;
 		SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 0);
-	}
-	else if(vsync_mode == -1)
-	{
-		LL_DEBUGS("Window") << "Enabling adaptive vertical sync" << LL_ENDL;
-		if(SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, -1) == -1)
-		{
-			LL_DEBUGS("Window") << "Failed to enable adaptive vertical sync. Disabling vsync." << LL_ENDL;
-			SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 0);
-		}
 	}
 	else
 	{
@@ -793,8 +786,6 @@ BOOL LLWindowSDL::switchContext(BOOL fullscreen, const LLCoordScreen &size, cons
 		result = createContext(0, 0, size.mX, size.mY, 0, fullscreen, vsync_mode);
 		if (result)
 		{
-			gGLManager.initGL();
-
 			//start with arrow cursor
 			initCursors();
 			setCursor( UI_CURSOR_ARROW );

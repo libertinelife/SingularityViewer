@@ -43,6 +43,7 @@
 #include "llsdutil_math.h"
 #include "llvertexbuffer.h"
 #include "llfasttimer.h"
+#include "llmatrix4a.h"
 
 extern LLGLSLShader			gPostColorFilterProgram;
 extern LLGLSLShader			gPostNightVisionProgram;
@@ -305,21 +306,21 @@ public:
 	{
 		addSetting(mStrength);
 	}
-	/*virtual*/ bool isEnabled()		const	{ return LLPostProcessShader::isEnabled() && llabs(gGLModelView[0] - gGLPreviousModelView[0]) > .0000001; }
+	/*virtual*/ bool isEnabled()		const	{ return LLPostProcessShader::isEnabled() && llabs(gGLModelView.getF32ptr()[0] - gGLPreviousModelView.getF32ptr()[0]) > .0000001; }
 	/*virtual*/ S32 getColorChannel()	const	{ return 0; }
 	/*virtual*/ S32 getDepthChannel()	const	{ return 1; }
 	/*virtual*/ QuadType preDraw()
 	{
-		glh::matrix4f inv_proj(gGLModelView);
-		inv_proj.mult_left(gGLProjection);
-		inv_proj = inv_proj.inverse();
-		glh::matrix4f prev_proj(gGLPreviousModelView);
-		prev_proj.mult_left(gGLProjection);
+		LLMatrix4a inv_proj;
+		inv_proj.setMul(gGLProjection,gGLModelView);
+		inv_proj.invert();
+		LLMatrix4a prev_proj;
+		prev_proj.setMul(gGLProjection,gGLPreviousModelView);
 
 		LLVector2 screen_rect = LLPostProcess::getInstance()->getDimensions();
 
-		getShader().uniformMatrix4fv(sPrevProj, 1, GL_FALSE, prev_proj.m);
-		getShader().uniformMatrix4fv(sInvProj, 1, GL_FALSE, inv_proj.m);
+		getShader().uniformMatrix4fv(sPrevProj, 1, GL_FALSE, prev_proj.getF32ptr());
+		getShader().uniformMatrix4fv(sInvProj, 1, GL_FALSE, inv_proj.getF32ptr());
 		getShader().uniform2fv(sScreenRes, 1, screen_rect.mV);
 		getShader().uniform1i(sBlurStrength, mStrength);
 		
@@ -471,10 +472,8 @@ void LLPostProcess::createNoiseTexture()
 	gGL.getTexUnit(0)->bindManual(LLTexUnit::TT_TEXTURE, mNoiseTexture);
 	stop_glerror();
 
-	if(gGLManager.mGLVersion >= 4.f)
-		LLImageGL::setManualImage(GL_TEXTURE_2D, 0, GL_R8, NOISE_SIZE, NOISE_SIZE, GL_RED, GL_UNSIGNED_BYTE, &buffer[0], false);
-	else
-		LLImageGL::setManualImage(GL_TEXTURE_2D, 0, GL_LUMINANCE8, NOISE_SIZE, NOISE_SIZE, GL_LUMINANCE, GL_UNSIGNED_BYTE, &buffer[0], false);
+	LLImageGL::setManualImage(GL_TEXTURE_2D, 0, GL_LUMINANCE8, NOISE_SIZE, NOISE_SIZE, GL_LUMINANCE, GL_UNSIGNED_BYTE, &buffer[0], false);
+
 	stop_glerror();
 	gGL.getTexUnit(0)->setTextureFilteringOption(LLTexUnit::TFO_BILINEAR);
 	gGL.getTexUnit(0)->setTextureAddressMode(LLTexUnit::TAM_WRAP);

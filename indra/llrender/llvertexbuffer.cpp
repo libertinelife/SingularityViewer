@@ -2044,6 +2044,10 @@ bool LLVertexBuffer::getNormalStrider(LLStrider<LLVector3>& strider, S32 index, 
 {
 	return VertexBufferStrider<LLVector3,TYPE_NORMAL>::get(*this, strider, index, count, map_range);
 }
+bool LLVertexBuffer::getNormalStrider(LLStrider<LLVector4a>& strider, S32 index, S32 count, bool map_range)
+{
+	return VertexBufferStrider<LLVector4a,TYPE_NORMAL>::get(*this, strider, index, count, map_range);
+}
 bool LLVertexBuffer::getTangentStrider(LLStrider<LLVector3>& strider, S32 index, S32 count, bool map_range)
 {
 	return VertexBufferStrider<LLVector3,TYPE_TANGENT>::get(*this, strider, index, count, map_range);
@@ -2065,14 +2069,14 @@ bool LLVertexBuffer::getWeightStrider(LLStrider<F32>& strider, S32 index, S32 co
 	return VertexBufferStrider<F32,TYPE_WEIGHT>::get(*this, strider, index, count, map_range);
 }
 
-bool LLVertexBuffer::getWeight4Strider(LLStrider<LLVector4>& strider, S32 index, S32 count, bool map_range)
+bool LLVertexBuffer::getWeight4Strider(LLStrider<LLVector4a>& strider, S32 index, S32 count, bool map_range)
 {
-	return VertexBufferStrider<LLVector4,TYPE_WEIGHT4>::get(*this, strider, index, count, map_range);
+	return VertexBufferStrider<LLVector4a,TYPE_WEIGHT4>::get(*this, strider, index, count, map_range);
 }
 
-bool LLVertexBuffer::getClothWeightStrider(LLStrider<LLVector4>& strider, S32 index, S32 count, bool map_range)
+bool LLVertexBuffer::getClothWeightStrider(LLStrider<LLVector4a>& strider, S32 index, S32 count, bool map_range)
 {
-	return VertexBufferStrider<LLVector4,TYPE_CLOTHWEIGHT>::get(*this, strider, index, count, map_range);
+	return VertexBufferStrider<LLVector4a,TYPE_CLOTHWEIGHT>::get(*this, strider, index, count, map_range);
 }
 
 //----------------------------------------------------------------------------

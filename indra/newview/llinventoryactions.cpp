@@ -34,6 +34,8 @@
 
 #include "llagentwearables.h"
 #include "llappearancemgr.h"
+#include "llavataractions.h"
+#include "llfloaterperms.h"
 #include "llfoldervieweventlistener.h"
 #include "llimview.h"
 #include "llinventorybridge.h"
@@ -58,11 +60,16 @@ extern LLUUID gAgentID;
 
 using namespace LLOldEvents;
 
+namespace LLInventoryAction
+{
+	bool doToSelected(LLFolderView* folder, std::string action);
+}
+
 typedef LLMemberListener<LLPanelObjectInventory> object_inventory_listener_t;
 typedef LLMemberListener<LLInventoryView> inventory_listener_t;
 typedef LLMemberListener<LLInventoryPanel> inventory_panel_listener_t;
 
-bool doToSelected(LLFolderView* folder, std::string action)
+bool LLInventoryAction::doToSelected(LLFolderView* folder, std::string action)
 {
 	LLInventoryModel* model = &gInventory;
 	if ("rename" == action)
@@ -134,7 +141,7 @@ class LLDoToSelectedPanel : public object_inventory_listener_t
 		LLFolderView* folder = panel->getRootFolder();
 		if(!folder) return true;
 
-		return doToSelected(folder, userdata.asString());
+		return LLInventoryAction::doToSelected(folder, userdata.asString());
 	}
 };
 
@@ -146,7 +153,7 @@ class LLDoToSelectedFloater : public inventory_listener_t
 		LLFolderView* folder = panel->getRootFolder();
 		if(!folder) return true;
 
-		return doToSelected(folder, userdata.asString());
+		return LLInventoryAction::doToSelected(folder, userdata.asString());
 	}
 };
 
@@ -158,7 +165,7 @@ class LLDoToSelected : public inventory_panel_listener_t
 		LLFolderView* folder = panel->getRootFolder();
 		if(!folder) return true;
 
-		return doToSelected(folder, userdata.asString());
+		return LLInventoryAction::doToSelected(folder, userdata.asString());
 	}
 };
 
@@ -304,7 +311,7 @@ void do_create(LLInventoryModel *model, LLInventoryPanel *ptr, std::string type,
 							parent_id,
 							LLAssetType::AT_LSL_TEXT,
 							LLInventoryType::IT_LSL,
-							PERM_MOVE | PERM_TRANSFER);
+							LLFloaterPerms::getNextOwnerPerms("Scripts"));
 	}
 	else if ("notecard" == type)
 	{
@@ -313,7 +320,7 @@ void do_create(LLInventoryModel *model, LLInventoryPanel *ptr, std::string type,
 							parent_id,
 							LLAssetType::AT_NOTECARD,
 							LLInventoryType::IT_NOTECARD,
-							PERM_ALL);
+							LLFloaterPerms::getNextOwnerPerms("Notecards"));
 	}
 	else if ("gesture" == type)
 	{
@@ -322,7 +329,7 @@ void do_create(LLInventoryModel *model, LLInventoryPanel *ptr, std::string type,
 							parent_id,
 							LLAssetType::AT_GESTURE,
 							LLInventoryType::IT_GESTURE,
-							PERM_ALL);
+							LLFloaterPerms::getNextOwnerPerms("Gestures"));
 	}
 	else if ("outfit" == type || ("update outfit" == type && !LLAppearanceMgr::getInstance()->updateBaseOutfit())) // If updateBaseOutfit fails, prompt to make a new outfit
 	{
@@ -627,6 +634,7 @@ void init_object_inventory_panel_actions(LLPanelObjectInventory *panel)
 void init_inventory_actions(LLInventoryView *floater)
 {
 	(new LLDoToSelectedFloater())->registerListener(floater, "Inventory.DoToSelected");
+	(new LLDoToSelectedFloater())->registerListener(floater, "Inventory.DoToSelected");
 	(new LLCloseAllFoldersFloater())->registerListener(floater, "Inventory.CloseAllFolders");
 	(new LLEmptyTrashFloater())->registerListener(floater, "Inventory.EmptyTrash");
 	(new LLDoCreateFloater())->registerListener(floater, "Inventory.DoCreate");
@@ -639,6 +647,15 @@ void init_inventory_actions(LLInventoryView *floater)
 	(new LLSetSearchType())->registerListener(floater, "Inventory.SetSearchType");
 }
 
+class LLShare : public inventory_panel_listener_t
+{
+	bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata)
+	{
+		LLAvatarActions::shareWithAvatars(mPtr);
+		return true;
+	}
+};
+
 void init_inventory_panel_actions(LLInventoryPanel *panel)
 {
 	(new LLDoToSelected())->registerListener(panel, "Inventory.DoToSelected");
@@ -648,4 +665,5 @@ void init_inventory_panel_actions(LLInventoryPanel *panel)
 	(new LLEmptyLostAndFound())->registerListener(panel, "Inventory.EmptyLostAndFound");
 	(new LLDoCreate())->registerListener(panel, "Inventory.DoCreate");
 	(new LLBeginIMSession())->registerListener(panel, "Inventory.BeginIMSession");
+	(new LLShare())->registerListener(panel, "Inventory.Share");
 }

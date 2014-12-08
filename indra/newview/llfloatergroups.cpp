@@ -185,7 +185,7 @@ LLPanelGroups::~LLPanelGroups()
 // clear the group list, and get a fresh set of info.
 void LLPanelGroups::reset()
 {
-	getChild<LLUICtrl>("groupcount")->setTextArg("[COUNT]", llformat("%d",gAgent.mGroups.count()));
+	getChild<LLUICtrl>("groupcount")->setTextArg("[COUNT]", llformat("%d",gAgent.mGroups.size()));
 	getChild<LLUICtrl>("groupcount")->setTextArg("[MAX]", llformat("%d", gHippoLimits->getMaxAgentGroups()));
 
 	init_group_list(getChild<LLScrollListCtrl>("group list"), gAgent.getGroupID());
@@ -194,7 +194,7 @@ void LLPanelGroups::reset()
 
 BOOL LLPanelGroups::postBuild()
 {
-	getChild<LLUICtrl>("groupcount")->setTextArg("[COUNT]", llformat("%d",gAgent.mGroups.count()));
+	getChild<LLUICtrl>("groupcount")->setTextArg("[COUNT]", llformat("%d",gAgent.mGroups.size()));
 	getChild<LLUICtrl>("groupcount")->setTextArg("[MAX]", llformat("%d",gHippoLimits->getMaxAgentGroups()));
 
 	LLScrollListCtrl *list = getChild<LLScrollListCtrl>("group list");
@@ -231,21 +231,20 @@ BOOL LLPanelGroups::postBuild()
 
 void LLPanelGroups::enableButtons()
 {
-	LLCtrlListInterface *group_list = childGetListInterface("group list");
+	getChildView("Create")->setEnabled(gAgent.canJoinGroups());
+	LLScrollListCtrl* group_list = getChild<LLScrollListCtrl>("group list");
+	if (!group_list) return;
 	LLUUID group_id;
-	if (group_list)
+	if (group_list->getNumSelected() == 1)
 	{
 		group_id = group_list->getCurrentID();
-	}
-
-	if(group_id != gAgent.getGroupID())
-	{
-		getChildView("Activate")->setEnabled(TRUE);
+		getChildView("Activate")->setEnabled(group_id != gAgent.getGroupID());
 	}
 	else
 	{
 		getChildView("Activate")->setEnabled(FALSE);
 	}
+
 	if (group_id.notNull())
 	{
 		getChildView("Info")->setEnabled(TRUE);
@@ -258,7 +257,6 @@ void LLPanelGroups::enableButtons()
 		getChildView("IM")->setEnabled(FALSE);
 		getChildView("Leave")->setEnabled(FALSE);
 	}
-	getChildView("Create")->setEnabled(gAgent.mGroups.count() < gHippoLimits->getMaxAgentGroups());
 	getChildView("Invite...")->setEnabled(group_id.notNull() && gAgent.hasPowerInGroup(group_id, GP_MEMBER_INVITE));
 }
 
@@ -370,7 +368,7 @@ LLSD create_group_element(const LLGroupData *group_datap, const LLUUID &active_g
 
 void init_group_list(LLScrollListCtrl* ctrl, const LLUUID& highlight_id, U64 powers_mask)
 {
-	S32 count = gAgent.mGroups.count();
+	S32 count = gAgent.mGroups.size();
 	LLUUID id;
 	LLCtrlListInterface *group_list = ctrl->getListInterface();
 	if (!group_list) return;
@@ -383,7 +381,7 @@ void init_group_list(LLScrollListCtrl* ctrl, const LLUUID& highlight_id, U64 pow
 
 	for(S32 i = 0; i < count; ++i)
 	{
-		LLSD element = create_group_element(&gAgent.mGroups.get(i), highlight_id, powers_mask);
+		LLSD element = create_group_element(&gAgent.mGroups[i], highlight_id, powers_mask);
 		if(element.size())
 			group_list->addElement(element, ADD_SORTED);
 	}

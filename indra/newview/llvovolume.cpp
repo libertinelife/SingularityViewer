@@ -343,6 +343,13 @@ U32 LLVOVolume::processUpdateMessage(LLMessageSystem *mesgsys,
 					mTextureAnimp = new LLViewerTextureAnim(this);
 					mTexAnimMode = 0;
 				}
+				else
+				{
+					if (!(mTextureAnimp->mMode & LLTextureAnim::SMOOTH))
+					{
+						mTextureAnimp->reset();
+					}
+				}
 				
 				mTextureAnimp->unpackTAMessage(mesgsys, block_num);
 			}
@@ -557,29 +564,28 @@ void LLVOVolume::animateTextures()
 
 				if (!facep->mTextureMatrix)
 				{
-					facep->mTextureMatrix = new LLMatrix4();
+					facep->mTextureMatrix = new LLMatrix4a();
 				}
 
-				LLMatrix4& tex_mat = *facep->mTextureMatrix;
+				LLMatrix4a& tex_mat = *facep->mTextureMatrix;
 				tex_mat.setIdentity();
 				LLVector3 trans ;
 				{
-					trans.set(LLVector3(off_s+0.5f, off_t+0.5f, 0.f));			
-					tex_mat.translate(LLVector3(-0.5f, -0.5f, 0.f));
+					trans.set(LLVector3(off_s+0.5f, off_t+0.5f, 0.f));
+					tex_mat.setTranslate_affine(LLVector3(-0.5f, -0.5f, 0.f));
 				}
 
-				LLVector3 scale(scale_s, scale_t, 1.f);			
-				LLQuaternion quat;
-				quat.setQuat(rot, 0, 0, -1.f);
+				LLVector3 scale(scale_s, scale_t, 1.f);
+	
+				tex_mat.setMul(gGL.genRot(rot*RAD_TO_DEG,0.f,0.f,-1.f),tex_mat);	//left mul
 
-				tex_mat.rotate(quat);				
+				LLMatrix4a scale_mat;
+				scale_mat.setIdentity();
+				scale_mat.applyScale_affine(scale);
+				tex_mat.setMul(scale_mat, tex_mat);	//left mul
 
-				LLMatrix4 mat;
-				mat.initAll(scale, LLQuaternion(), LLVector3());
-				tex_mat *= mat;
-		
-				tex_mat.translate(trans);
-			}
+				tex_mat.translate_affine(trans);		
+			}	
 		}
 		else
 		{
@@ -1503,93 +1509,53 @@ void LLVOVolume::updateRelativeXform(bool force_identity)
 	{ //rigged volume (which is in agent space) is used for generating bounding boxes etc
 	  //inverse of render matrix should go to partition space
 		mRelativeXform = getRenderMatrix();
-
-		F32* dst = (F32*) mRelativeXformInvTrans.mMatrix;
-		F32* src = (F32*) mRelativeXform.mMatrix;
-		dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2];
-		dst[3] = src[4]; dst[4] = src[5]; dst[5] = src[6];
-		dst[6] = src[8]; dst[7] = src[9]; dst[8] = src[10];
-		
+		mRelativeXformInvTrans = mRelativeXform;
 		mRelativeXform.invert();
 		mRelativeXformInvTrans.transpose();
 	}
 	else if (drawable->isActive() || force_identity)
 	{				
 		// setup relative transforms
-		LLQuaternion delta_rot;
-		LLVector3 delta_pos, delta_scale;
-		
-		//matrix from local space to parent relative/global space
+
 		bool use_identity = force_identity || drawable->isSpatialRoot();
-		delta_rot = use_identity ? LLQuaternion() : mDrawable->getRotation();
-		delta_pos = use_identity ? LLVector3(0,0,0) : mDrawable->getPosition();
-		delta_scale = mDrawable->getScale();
 
-		// Vertex transform (4x4)
-		LLVector3 x_axis = LLVector3(delta_scale.mV[VX], 0.f, 0.f) * delta_rot;
-		LLVector3 y_axis = LLVector3(0.f, delta_scale.mV[VY], 0.f) * delta_rot;
-		LLVector3 z_axis = LLVector3(0.f, 0.f, delta_scale.mV[VZ]) * delta_rot;
+		if(use_identity)
+		{
+			mRelativeXform.setIdentity();
+			mRelativeXform.applyScale_affine(mDrawable->getScale());
+		}
+		else
+		{
+			mRelativeXform = LLQuaternion2(mDrawable->getRotation());
+			mRelativeXform.applyScale_affine(mDrawable->getScale());
+			mRelativeXform.setTranslate_affine(mDrawable->getPosition());
+		}
 
-		mRelativeXform.initRows(LLVector4(x_axis, 0.f),
-								LLVector4(y_axis, 0.f),
-								LLVector4(z_axis, 0.f),
-								LLVector4(delta_pos, 1.f));
-
-		
-		// compute inverse transpose for normals
-		// mRelativeXformInvTrans.setRows(x_axis, y_axis, z_axis);
-		// mRelativeXformInvTrans.invert(); 
-		// mRelativeXformInvTrans.setRows(x_axis, y_axis, z_axis);
-		// grumble - invert is NOT a matrix invert, so we do it by hand:
-
-		LLMatrix3 rot_inverse = LLMatrix3(~delta_rot);
-
-		LLMatrix3 scale_inverse;
-		scale_inverse.setRows(LLVector3(1.0, 0.0, 0.0) / delta_scale.mV[VX],
-							  LLVector3(0.0, 1.0, 0.0) / delta_scale.mV[VY],
-							  LLVector3(0.0, 0.0, 1.0) / delta_scale.mV[VZ]);
-							   
-		
-		mRelativeXformInvTrans = rot_inverse * scale_inverse;
-
+		mRelativeXformInvTrans = mRelativeXform;
+		mRelativeXformInvTrans.invert();
 		mRelativeXformInvTrans.transpose();
 	}
 	else
 	{
-		LLVector3 pos = getPosition();
-		LLVector3 scale = getScale();
-		LLQuaternion rot = getRotation();
-	
+		LLVector4a pos;
+		pos.load3(getPosition().mV);
+		LLQuaternion2 rot(getRotation());
 		if (mParent)
 		{
-			pos *= mParent->getRotation();
-			pos += mParent->getPosition();
-			rot *= mParent->getRotation();
+			LLMatrix4a lrot = LLQuaternion2(mParent->getRotation());
+			lrot.rotate(pos,pos);
+			LLVector4a lpos;
+			lpos.load3(mParent->getPosition().mV);
+			pos.add(lpos);
+			rot.mul(LLQuaternion2(mParent->getRotation()));
 		}
-		
-		//LLViewerRegion* region = getRegion();
-		//pos += region->getOriginAgent();
-		
-		LLVector3 x_axis = LLVector3(scale.mV[VX], 0.f, 0.f) * rot;
-		LLVector3 y_axis = LLVector3(0.f, scale.mV[VY], 0.f) * rot;
-		LLVector3 z_axis = LLVector3(0.f, 0.f, scale.mV[VZ]) * rot;
 
-		mRelativeXform.initRows(LLVector4(x_axis, 0.f),
-								LLVector4(y_axis, 0.f),
-								LLVector4(z_axis, 0.f),
-								LLVector4(pos, 1.f));
+		mRelativeXform = rot;
+		mRelativeXform.applyScale_affine(getScale());
+		mRelativeXform.setTranslate_affine(LLVector3(pos.getF32ptr()));
 
-		// compute inverse transpose for normals
-		LLMatrix3 rot_inverse = LLMatrix3(~rot);
-
-		LLMatrix3 scale_inverse;
-		scale_inverse.setRows(LLVector3(1.0, 0.0, 0.0) / scale.mV[VX],
-							  LLVector3(0.0, 1.0, 0.0) / scale.mV[VY],
-							  LLVector3(0.0, 0.0, 1.0) / scale.mV[VZ]);
-							   
-		
-		mRelativeXformInvTrans = rot_inverse * scale_inverse;
-
+		mRelativeXformInvTrans = mRelativeXform;
+		mRelativeXformInvTrans.invert();
 		mRelativeXformInvTrans.transpose();
 	}
 }
@@ -1726,11 +1692,6 @@ BOOL LLVOVolume::updateGeometry(LLDrawable *drawable)
 
 	// Update face flags
 	updateFaceFlags();
-	
-	if(compiled)
-	{
-		LLPipeline::sCompiles++;
-	}
 	
 	mVolumeChanged = FALSE;
 	mLODChanged = FALSE;
@@ -3025,10 +2986,10 @@ void LLVOVolume::generateSilhouette(LLSelectNode* nodep, const LLVector3& view_p
 		}
 		
 		updateRelativeXform();
-		LLMatrix4 trans_mat = mRelativeXform;
+		LLMatrix4a trans_mat = mRelativeXform;
 		if (mDrawable->isStatic())
 		{
-			trans_mat.translate(getRegion()->getOriginAgent());
+			trans_mat.translate_affine(getRegion()->getOriginAgent());
 		}
 
 		volume->generateSilhouetteVertices(nodep->mSilhouetteVertices, nodep->mSilhouetteNormals, view_vector, trans_mat, mRelativeXformInvTrans, nodep->getTESelectMask());
@@ -3075,7 +3036,7 @@ BOOL LLVOVolume::isHUDAttachment() const
 }
 
 
-const LLMatrix4 LLVOVolume::getRenderMatrix() const
+const LLMatrix4a& LLVOVolume::getRenderMatrix() const
 {
 	if (mDrawable->isActive() && !mDrawable->isRoot())
 	{
@@ -3557,7 +3518,7 @@ void LLVOVolume::onShift(const LLVector4a &shift_vector)
 	updateRelativeXform();
 }
 
-const LLMatrix4& LLVOVolume::getWorldMatrix(LLXformMatrix* xform) const
+const LLMatrix4a& LLVOVolume::getWorldMatrix(LLXformMatrix* xform) const
 {
 	if (mVolumeImpl)
 	{
@@ -3644,7 +3605,7 @@ BOOL LLVOVolume::lineSegmentIntersect(const LLVector4a& start, const LLVector4a&
 	if (mDrawable->isState(LLDrawable::RIGGED))
 	{
 		static const LLCachedControl<bool> allow_mesh_picking("SGAllowRiggedMeshSelection");
-		if (allow_mesh_picking && (gFloaterTools->getVisible() || LLFloaterInspect::instanceExists()))
+		if (allow_mesh_picking && (gFloaterTools->getVisible() || LLFloaterInspect::findInstance()))
 		{
 			updateRiggedVolume();
 			//genBBoxes(FALSE);
@@ -3826,7 +3787,7 @@ BOOL LLVOVolume::lineSegmentIntersect(const LLVector4a& start, const LLVector4a&
 
 bool LLVOVolume::treatAsRigged()
 {
-	return (gFloaterTools->getVisible() || LLFloaterInspect::instanceExists()) && 
+	return (gFloaterTools->getVisible() || LLFloaterInspect::findInstance()) &&
 			isAttachment() && 
 			mDrawable.notNull() &&
 			mDrawable->isState(LLDrawable::RIGGED);
@@ -3916,19 +3877,24 @@ void LLRiggedVolume::update(const LLMeshSkinInfo* skin, LLVOAvatar* avatar, cons
 	}
 
 	//build matrix palette
-	static const size_t kMaxJoints = 64;
+	LLMatrix4a mp[JOINT_COUNT];
 
-	LLMatrix4a mp[kMaxJoints];
-	LLMatrix4* mat = (LLMatrix4*) mp;
-	
-	U32 maxJoints = llmin(skin->mJointNames.size(), kMaxJoints);
-	for (U32 j = 0; j < maxJoints; ++j)
+	U32 count = llmin((U32) skin->mJointNames.size(), (U32) JOINT_COUNT);
+
+	llassert_always(count);
+
+	for (U32 j = 0; j < count; ++j)
 	{
 		LLJoint* joint = avatar->getJoint(skin->mJointNames[j]);
+		if(!joint)
+		{
+			joint = avatar->getJoint("mRoot");
+		}
 		if (joint)
 		{
-			mat[j] = skin->mInvBindMatrix[j];
-			mat[j] *= joint->getWorldMatrix();
+			LLMatrix4a mat;
+			mat.loadu((F32*)skin->mInvBindMatrix[j].mMatrix);
+			mp[j].setMul(joint->getWorldMatrix(), mat);
 		}
 	}
 
@@ -3973,17 +3939,17 @@ void LLRiggedVolume::update(const LLMeshSkinInfo* skin, LLVOAvatar* avatar, cons
 					scale += wght[k];
 				}
 
-				wght *= 1.f/scale;
+				if(scale > 0.f)
+					wght *= 1.f/scale;
+				else
+					wght = LLVector4(F32_MAX,F32_MAX,F32_MAX,F32_MAX);
 
 				for (U32 k = 0; k < 4; k++)
 				{
 					F32 w = wght[k];
-
 					LLMatrix4a src;
-					// Ensure ref'd bone is in our clamped array of mats
-					llassert(idx[k] < kMaxJoints);
-					// clamp k to kMaxJoints to avoid reading garbage off stack in release
-					src.setMul(mp[idx[(k < kMaxJoints) ? k : 0]], w);
+					src.setMul(mp[idx[k]], w);
+
 					final_mat.add(src);
 				}
 
@@ -4137,6 +4103,13 @@ void LLVolumeGeometryManager::registerFace(LLSpatialGroup* group, LLFace* facep,
 		return;
 	}
 
+	if(!facep->mShinyInAlpha)
+		facep->mShinyInAlpha =	(type == LLRenderPass::PASS_FULLBRIGHT_SHINY) || 
+								(type == LLRenderPass::PASS_INVISI_SHINY) || 
+								(type == LLRenderPass::PASS_SHINY) || 
+								(LLPipeline::sRenderDeferred && type == LLRenderPass::PASS_BUMP) ||
+								(LLPipeline::sRenderDeferred && type == LLRenderPass::PASS_SIMPLE);
+
 	//add face to drawmap
 	LLSpatialGroup::drawmap_elem_t& draw_vec = group->mDrawMap[type];	
 
@@ -4164,13 +4137,13 @@ void LLVolumeGeometryManager::registerFace(LLSpatialGroup* group, LLFace* facep,
 		return;
 	}
 
-	const LLMatrix4* tex_mat = NULL;
+	const LLMatrix4a* tex_mat = NULL;
 	if (facep->isState(LLFace::TEXTURE_ANIM) && facep->getVirtualSize() > MIN_TEX_ANIM_SIZE)
 	{
 		tex_mat = facep->mTextureMatrix;	
 	}
 
-	const LLMatrix4* model_mat = NULL;
+	const LLMatrix4a* model_mat = NULL;
 
 	LLDrawable* drawable = facep->getDrawable();
 	
@@ -4187,6 +4160,11 @@ void LLVolumeGeometryManager::registerFace(LLSpatialGroup* group, LLFace* facep,
 		model_mat = &(drawable->getRegion()->mRenderMatrix);
 	}
 
+	if(model_mat && model_mat->isIdentity())
+	{
+		model_mat = NULL;
+	}
+
 	//drawable->getVObj()->setDebugText(llformat("%d", drawable->isState(LLDrawable::ANIMATED_CHILD)));
 
 	LLMaterial* mat = facep->getTextureEntry()->getMaterialParams().get(); 
@@ -4194,8 +4172,9 @@ void LLVolumeGeometryManager::registerFace(LLSpatialGroup* group, LLFace* facep,
 	U32 pool_type = facep->getPoolType();
 
 	bool cmp_bump = (type == LLRenderPass::PASS_BUMP) || (type == LLRenderPass::PASS_POST_BUMP);
-	bool cmp_mat =	(!alt_batching) || LLPipeline::sRenderDeferred && /*facep->getTextureEntry()->getColor().mV[3] >= 0.999f &&*/
-					((pool_type == LLDrawPool::POOL_MATERIALS) || (pool_type == LLDrawPool::POOL_ALPHA));
+	bool cmp_mat =	(!alt_batching) || LLPipeline::sRenderDeferred &&
+					((pool_type == LLDrawPool::POOL_MATERIALS) || (pool_type == LLDrawPool::POOL_ALPHA)) || 
+					pool_type == LLDrawPool::POOL_ALPHA_MASK || pool_type == LLDrawPool::POOL_FULLBRIGHT_ALPHA_MASK;
 	bool cmp_shiny = (!alt_batching) ? !!mat : (mat && cmp_mat);
 	bool cmp_fullbright = !alt_batching || cmp_shiny || pool_type == LLDrawPool::POOL_ALPHA;
 
@@ -4275,7 +4254,7 @@ void LLVolumeGeometryManager::registerFace(LLSpatialGroup* group, LLFace* facep,
 			draw_vec[idx]->mTextureList.resize(index+1);
 			draw_vec[idx]->mTextureList[index] = tex;
 		}
-		draw_vec[idx]->validate();
+		//draw_vec[idx]->validate();
 		update_min_max(draw_vec[idx]->mExtents[0], draw_vec[idx]->mExtents[1], facep->mExtents[0]);
 		update_min_max(draw_vec[idx]->mExtents[0], draw_vec[idx]->mExtents[1], facep->mExtents[1]);
 	}
@@ -4323,7 +4302,7 @@ void LLVolumeGeometryManager::registerFace(LLSpatialGroup* group, LLFace* facep,
 					specColor.mV[0] = mat->getSpecularLightColor().mV[0] * (1.f / 255.f);
 					specColor.mV[1] = mat->getSpecularLightColor().mV[1] * (1.f / 255.f);
 					specColor.mV[2] = mat->getSpecularLightColor().mV[2] * (1.f / 255.f);
-					specColor.mV[3] = mat->getSpecularLightExponent() * (1.f / 255.f);
+					specColor.mV[3] = llmax(0.0001f, mat->getSpecularLightExponent() * (1.f / 255.f));
 					draw_info->mSpecColor = specColor;
 					draw_info->mEnvIntensity = mat->getEnvironmentIntensity() * (1.f / 255.f);
 					draw_info->mSpecularMap = facep->getViewerObject()->getTESpecularMap(facep->getTEOffset());
@@ -4359,7 +4338,7 @@ void LLVolumeGeometryManager::registerFace(LLSpatialGroup* group, LLFace* facep,
 			draw_info->mTextureList[index] = tex;
 		}
 
-		draw_info->validate();
+		//draw_info->validate();
 	}
 }
 
@@ -4537,8 +4516,6 @@ void LLVolumeGeometryManager::rebuildGeom(LLSpatialGroup* group)
 			bool rigged = vobj->isAttachment() && 
 						vobj->isMesh() && 
 						gMeshRepo.getSkinInfo(vobj->getVolume()->getParams().getSculptID(), vobj);
-
-			//bool bake_sunlight = LLPipeline::sBakeSunlight && drawablep->isStatic();
 
 			bool is_rigged = false;
 
@@ -5557,8 +5534,6 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 		LLViewerTexture* tex = facep->getTexture();
 		LLMaterialPtr mat = facep->getTextureEntry()->getMaterialParams();
 
-		//bool bake_sunlight = LLPipeline::sBakeSunlight && facep->getDrawable()->isStatic();
-
 		static const LLCachedControl<bool> alt_batching("SHAltBatching",true);
 		if (!alt_batching && distance_sort)
 		{
@@ -5859,7 +5834,8 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 				//for debugging, set last time face was updated vs moved
 				facep->updateRebuildFlags();
 
-				if (!LLPipeline::sDelayVBUpdate)
+				//Singu Note: Moved to after registerFace calls, as those update LLFace::mShinyInAlpha, which is needed before updating the vertex buffer.
+				/*if (!LLPipeline::sDelayVBUpdate)
 				{ //copy face geometry into vertex buffer
 					LLDrawable* drawablep = facep->getDrawable();
 					LLVOVolume* vobj = drawablep->getVOVolume();
@@ -5884,11 +5860,10 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 					{
 						vobj->updateRelativeXform(false);
 					}
-				}
+				}*/
 			}
 
-			index_offset += facep->getGeomCount();
-			indices_index += facep->getIndicesCount();
+			facep->mShinyInAlpha = false;
 
 			static const LLCachedControl<bool> alt_batching("SHAltBatching",true);
 
@@ -6304,8 +6279,44 @@ void LLVolumeGeometryManager::genDrawInfo(LLSpatialGroup* group, U32 mask, LLFac
 				registerFace(group, facep, LLRenderPass::PASS_GLOW);
 			}
 			}
+
+			//Singu Note: LLFace::mShinyInAlpha has been updated by now. We're good to go.
+			if (!LLPipeline::sDelayVBUpdate)
+			{ //copy face geometry into vertex buffer
+				LLDrawable* drawablep = facep->getDrawable();
+				LLVOVolume* vobj = drawablep->getVOVolume();
+				LLVolume* volume = vobj->getVolume();
+
+				if (drawablep->isState(LLDrawable::ANIMATED_CHILD))
+				{
+					vobj->updateRelativeXform(true);
+				}
+
+				U32 te_idx = facep->getTEOffset();
+
+				llassert(!facep->isState(LLFace::RIGGED));
+
+				if (!facep->getGeometryVolume(*volume, te_idx, 
+					vobj->getRelativeXform(), vobj->getRelativeXformInvTrans(), index_offset,true))
+				{
+					llwarns << "Failed to get geometry for face!" << llendl;
+				}
+
+				if (drawablep->isState(LLDrawable::ANIMATED_CHILD))
+				{
+					vobj->updateRelativeXform(false);
+				}
+			}
+
+			index_offset += facep->getGeomCount();
+			indices_index += facep->getIndicesCount();
 						
 			++face_iter;
+		}
+
+		if(index_offset > 0)
+		{
+			buffer->validateRange(0,  index_offset - 1, indices_index, 0);
 		}
 
 		buffer->flush();

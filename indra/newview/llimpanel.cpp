@@ -172,10 +172,10 @@ public:
 		mAgents = agents_to_invite;
 	}
 
-	/*virtual*/ void error(U32 statusNum, const std::string& reason)
+	/*virtual*/ void httpFailure(void)
 	{
 		//try an "old school" way.
-		if ( statusNum == 400 )
+		if ( mStatus == 400 )
 		{
 			start_deprecated_conference_chat(
 				mTempSessionID,
@@ -347,6 +347,7 @@ LLFloaterIMPanel::LLFloaterIMPanel(
 	case IM_SESSION_P2P_INVITE:
 		mVoiceChannel = new LLVoiceChannelP2P(mSessionUUID, mLogLabel, mOtherParticipantUUID);
 		LLAvatarTracker::instance().addParticularFriendObserver(mOtherParticipantUUID, this);
+		mDing = gSavedSettings.getBOOL("LiruNewMessageSoundIMsOn");
 		break;
 	default:
 		llwarns << "Unknown session type" << llendl;
@@ -403,7 +404,17 @@ void LLFloaterIMPanel::onAvatarNameLookup(const LLAvatarName& avatar_name)
 	std::string title;
 	LLAvatarNameCache::getPNSName(avatar_name, title);
 	setTitle(title);
-	// Singu Note: We could set tab name here, too now.
+	const S32& ns(gSavedSettings.getS32("IMNameSystem"));
+	LLAvatarNameCache::getPNSName(avatar_name, title, ns);
+	if (!ns || ns == 3) // Remove Resident, if applicable.
+	{
+		size_t pos(title.find(" Resident"));
+		if (pos != std::string::npos && !gSavedSettings.getBOOL("LiruShowLastNameResident"))
+			title.erase(pos, 9);
+	}
+	setShortTitle(title);
+	if (LLMultiFloater* mf = dynamic_cast<LLMultiFloater*>(getParent()))
+		mf->updateFloaterTitle(this);
 }
 
 LLFloaterIMPanel::~LLFloaterIMPanel()
@@ -554,12 +565,7 @@ void LLFloaterIMPanel::onClickMuteVoice()
 // virtual
 void LLFloaterIMPanel::draw()
 {	
-	LLViewerRegion* region = gAgent.getRegion();
-	
-	bool enable_connect = (region && !region->getCapability("ChatSessionRequest").empty())
-					  && mSessionInitialized
-					  && LLVoiceClient::getInstance()->voiceEnabled()
-					  && mCallBackEnabled;
+	bool enable_connect = mSessionInitialized && LLVoiceClient::getInstance()->voiceEnabled() && mCallBackEnabled;
 
 	// hide/show start call and end call buttons
 	mEndCallBtn->setVisible(LLVoiceClient::getInstance()->voiceEnabled() && mVoiceChannel->getState() >= LLVoiceChannel::STATE_CALL_STARTED);
@@ -639,10 +645,10 @@ public:
 		mSessionID = session_id;
 	}
 
-	/*virtual*/ void error(U32 statusNum, const std::string& reason)
+	/*virtual*/ void httpFailure(void)
 	{
 		llwarns << "Error inviting all agents to session [status:"
-				<< statusNum << "]: " << reason << llendl;
+				<< mStatus << "]: " << mReason << llendl;
 		//throw something back to the viewer here?
 	}
 
@@ -1002,10 +1008,10 @@ void LLFloaterIMPanel::onFlyoutCommit(LLComboBox* flyout, const LLSD& value)
 
 void show_log_browser(const std::string& name, const std::string& id)
 {
-#if LL_WINDOWS // Singu TODO: Other platforms?
+#if LL_WINDOWS || LL_DARWIN // Singu TODO: Linux?
 	if (gSavedSettings.getBOOL("LiruLegacyLogLaunch"))
 	{
-		gViewerWindow->getWindow()->ShellEx("\"" + LLLogChat::makeLogFileName(name) + "\"");
+		gViewerWindow->getWindow()->ShellEx(LLLogChat::makeLogFileName(name));
 		return;
 	}
 #endif
@@ -1035,7 +1041,8 @@ void LLFloaterIMPanel::onClickToggleActiveSpeakers(const LLSD& value)
 
 void LLFloaterIMPanel::onInputEditorFocusReceived()
 {
-	mHistoryEditor->setCursorAndScrollToEnd();
+	if (gSavedSettings.getBOOL("LiruLegacyScrollToEnd"))
+		mHistoryEditor->setCursorAndScrollToEnd();
 }
 
 void LLFloaterIMPanel::onInputEditorKeystroke(LLLineEditor* caller)
